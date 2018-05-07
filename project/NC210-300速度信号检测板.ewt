@@ -2341,10 +2341,91 @@
     </group>
   </group>
   <group>
+    <name>osal</name>
+    <group>
+      <name>port</name>
+    </group>
+    <group>
+      <name>source</name>
+      <file>
+        <name>$PROJ_DIR$\..\source\OSAL\OS\osal.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\OSAL\OS\osal.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\OSAL\OS\osal_cpu.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\OSAL\OS\osal_event.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\OSAL\OS\osal_event.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\OSAL\OS\osal_memory.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\OSAL\OS\osal_memory.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\OSAL\OS\osal_timer.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\OSAL\OS\osal_timer.h</name>
+      </file>
+    </group>
+  </group>
+  <group>
     <name>uc-cos</name>
   </group>
   <group>
     <name>uc-mb</name>
+    <group>
+      <name>cfg</name>
+      <file>
+        <name>$PROJ_DIR$\..\source\uc-mb\Cfg\Template\mb_cfg.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\uc-mb\Cfg\Template\MB_DATA.C</name>
+      </file>
+    </group>
+    <group>
+      <name>os</name>
+      <file>
+        <name>$PROJ_DIR$\..\source\uc-mb\OS\uCOS-III\MB_OS.C</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\uc-mb\OS\uCOS-III\MB_OS.H</name>
+      </file>
+    </group>
+    <group>
+      <name>port</name>
+      <file>
+        <name>$PROJ_DIR$\..\source\uc-mb\Ports\STM32\STM32F103\IAR\MB_BSP.C</name>
+      </file>
+    </group>
+    <group>
+      <name>source</name>
+      <file>
+        <name>$PROJ_DIR$\..\source\uc-mb\Source\MB.C</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\uc-mb\Source\MB.h</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\uc-mb\Source\MB_DEF.H</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\uc-mb\Source\MB_UTIL.C</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\uc-mb\Source\MBM_CORE.C</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\uc-mb\Source\MBS_CORE.C</name>
+      </file>
+    </group>
   </group>
 </project>
 

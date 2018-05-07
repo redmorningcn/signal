@@ -34,9 +34,7 @@
 #define  MBM_MODULE
 #include <includes.h>
 #include <global.h>
-#include <aes.h>
 
-//#include <diagcounter.h>
 /*
 *********************************************************************************************************
 *                                                MACROS

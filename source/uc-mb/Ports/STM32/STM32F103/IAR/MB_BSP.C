@@ -65,7 +65,7 @@
 /***********************************************
 * 描述： 
 */
-#define  BSP_COM1_REN               DEF_DISABLED
+#define  BSP_COM1_REN               DEF_ENABLED
 #define  BSP_COM2_REN               DEF_DISABLED
 #define  BSP_COM3_REN               DEF_ENABLED
 #define  BSP_COM4_REN               DEF_ENABLED
@@ -216,13 +216,13 @@ void  MB_CommPortCfg (MODBUS_CH  *pch,
         * 描述： 接收发送使能信号
         */
 #if (BSP_COM1_REN == DEF_ENABLED)
-        RCC_APB2PeriphClockCmd(MBREN1_GPIO_RCC, ENABLE);
-        GPIO_InitStructure.GPIO_Pin   = MBREN1_GPIO_PIN;
-        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-        GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;
-        GPIO_Init(MBREN1_GPIO_PORT, &GPIO_InitStructure);
-        
-        GPIO_ResetBits(MBREN1_GPIO_PORT, MBREN1_GPIO_PIN);  // 低电平接收使能 
+//        RCC_APB2PeriphClockCmd(MBREN1_GPIO_RCC, ENABLE);
+//        GPIO_InitStructure.GPIO_Pin   = MBREN1_GPIO_PIN;
+//        GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+//        GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;
+//        GPIO_Init(MBREN1_GPIO_PORT, &GPIO_InitStructure);
+//        
+//        GPIO_ResetBits(MBREN1_GPIO_PORT, MBREN1_GPIO_PIN);  // 低电平接收使能 
 #endif
         
         break;
@@ -323,7 +323,7 @@ void  MB_CommPortCfg (MODBUS_CH  *pch,
         GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_Out_PP;
         GPIO_Init(MBREN4_GPIO_PORT, &GPIO_InitStructure);
         
-        GPIO_ResetBits(MBREN4_GPIO_PORT, MBREN4_GPIO_PIN);  // 低电平接收使能  
+        //GPIO_ResetBits(MBREN4_GPIO_PORT, MBREN4_GPIO_PIN);  // 低电平接收使能  
 #endif
         break;
     default:
@@ -351,7 +351,7 @@ void  MB_CommPortCfg (MODBUS_CH  *pch,
     */
     USART_ClearFlag(USARTx,USART_FLAG_TXE);
     USART_ClearFlag(USARTx,USART_FLAG_RXNE);
-    //USART_ClearFlag(USARTx,USART_FLAG_IDLE);
+    USART_ClearFlag(USARTx,USART_FLAG_IDLE);
       
     /***********************************************
     * 描述： 
@@ -408,7 +408,7 @@ void  MB_CommRxIntDis (MODBUS_CH  *pch)
         * 描述： 收发送使能控制信号
         */
 #if (BSP_COM1_REN == DEF_ENABLED)
-        GPIO_SetBits(MBREN1_GPIO_PORT, MBREN1_GPIO_PIN);        // 高电平发送使能 
+        //GPIO_SetBits(MBREN1_GPIO_PORT, MBREN1_GPIO_PIN);        // 高电平发送使能 
 #endif
         USART_ITConfig(USART1, USART_IT_RXNE, DISABLE);
         break;
@@ -469,7 +469,7 @@ void  MB_CommRxIntEn (MODBUS_CH  *pch)
     switch (pch->PortNbr) {
     case 0:
 #if (BSP_COM1_REN == DEF_ENABLED)
-        GPIO_ResetBits(MBREN1_GPIO_PORT, MBREN1_GPIO_PIN);  // 低电平接收使能 
+        //GPIO_ResetBits(MBREN1_GPIO_PORT, MBREN1_GPIO_PIN);  // 低电平接收使能 
 #endif
         USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);        
         break;

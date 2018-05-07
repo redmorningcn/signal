@@ -34,10 +34,9 @@
 */
 
 #define  MBS_MODULE
-// Modified by SE
 #include <includes.h>
-#include <mb_app_hooks.h>
-//#include <diagcounter.h>
+//#include <mb_app_hooks.h>
+
 /*
 *********************************************************************************************************
 *                                                MACROS
@@ -584,7 +583,7 @@ static  CPU_BOOLEAN  MBS_FC03_HoldingRegRd (MODBUS_CH  *pch)
     }
     reg       = MBS_RX_DATA_START;
     nbr_regs  = MBS_RX_DATA_POINTS;
-
+    
 #if SE_MODBUS_CODE > 0
 
     MB_DATA_holdingRegRd(pch, &err);
@@ -595,15 +594,15 @@ static  CPU_BOOLEAN  MBS_FC03_HoldingRegRd (MODBUS_CH  *pch)
        MBS_ErrRespSet(pch, MODBUS_ERR_ILLEGAL_DATA_ADDR);
        return (DEF_TRUE);
     }
-    pch->Err = MODBUS_ERR_NONE;
-    return (DEF_TRUE);
+    //pch->Err = MODBUS_ERR_NONE;
+    //return (DEF_TRUE); 
 
 #else // ALL SE_MODBUS_CODE code above here
 #if (MODBUS_CFG_FP_EN == DEF_ENABLED)
     if (reg < MODBUS_CFG_FP_START_IX) {                          /* See if we want integer registers                         */
         if (nbr_regs == 0 || nbr_regs > 125) {                   /* Make sure we don't exceed the allowed limit per request  */
             pch->Err = MODBUS_ERR_FC03_03;
-            MBS_ErrRespSet(pch,
+            MBS_ErrRespSet(pch, 
                            MODBUS_ERR_ILLEGAL_DATA_QTY);
             return (DEF_TRUE);                                   /* Tell caller that we need to send a response              */
         }
@@ -611,7 +610,7 @@ static  CPU_BOOLEAN  MBS_FC03_HoldingRegRd (MODBUS_CH  *pch)
     } else {
         if (nbr_regs == 0 || nbr_regs > 62) {                    /* Make sure we don't exceed the allowed limit per request  */
             pch->Err = MODBUS_ERR_FC03_04;
-            MBS_ErrRespSet(pch,
+            MBS_ErrRespSet(pch, 
                            MODBUS_ERR_ILLEGAL_DATA_QTY);
             return (DEF_TRUE);                                   /* Tell caller that we need to send a response              */
         }
@@ -619,11 +618,11 @@ static  CPU_BOOLEAN  MBS_FC03_HoldingRegRd (MODBUS_CH  *pch)
     }
 #else
     if (nbr_regs == 0 || nbr_regs > 125) {                       /* Make sure we don't exceed the allowed limit per request  */
-        pch->Err = MODBUS_ERR_FC03_03;
-        MBS_ErrRespSet(pch,
-                       MODBUS_ERR_ILLEGAL_DATA_QTY);
+        pch->Err = MODBUS_ERR_FC03_03;                     
+        MBS_ErrRespSet(pch,                                
+                       MODBUS_ERR_ILLEGAL_DATA_QTY);       
         return (DEF_TRUE);                                       /* Tell caller that we need to send a response              */
-    }
+    }                                                      
     nbr_bytes = (CPU_INT08U)(nbr_regs * sizeof(CPU_INT16U));     /* Find #bytes needed for response.                         */
 #endif
     pch->TxFrameNDataBytes = nbr_bytes + 1;                      /* Number of data bytes + byte count.                       */
@@ -631,35 +630,10 @@ static  CPU_BOOLEAN  MBS_FC03_HoldingRegRd (MODBUS_CH  *pch)
     *presp++              =  MBS_RX_FRAME_ADDR;
     *presp++              =  MBS_RX_FRAME_FC;
     *presp++              = (CPU_INT08U)nbr_bytes;               /* Set number of data bytes in response message             */
-
-    /***********************************************
-    * 描述： 读多个寄存器回调函数
-    */
-    if ( App_MB_RdNRegsHook ( (CPU_INT16U )reg,
-                              (CPU_INT16U*)presp,
-                              (CPU_INT16U )nbr_regs,
-                               &err ) ) {
-        if ( err != MODBUS_ERR_NONE ) {
-             pch->Err = MODBUS_ERR_FC03_02;
-             MBS_ErrRespSet(pch,
-                            MODBUS_ERR_ILLEGAL_DATA_ADDR);
-             return (DEF_TRUE);
-        } else {
-            nbr_regs    = 0;
-        }
-    } else {
-        if ( err != MODBUS_ERR_NONE ) {
-             pch->Err = MODBUS_ERR_FC03_02;
-             MBS_ErrRespSet(pch,
-                            MODBUS_ERR_ILLEGAL_DATA_ADDR);
-             return (DEF_TRUE);
-        }
-    }
-
     while (nbr_regs > 0) {                                       /* Loop through each register requested.                    */
         if (reg < MODBUS_CFG_FP_START_IX) {                      /* See if we want an integer register                       */
             reg_val_16 = MB_HoldingRegRd(reg,                    /* Yes, get its value                                       */
-                                         &err);
+                                         &err);             
             switch (err) {
                 case MODBUS_ERR_NONE:
                      *presp++ = (CPU_INT08U)((reg_val_16 >> 8) & 0x00FF); /*      Get MSB first.                             */
@@ -669,14 +643,14 @@ static  CPU_BOOLEAN  MBS_FC03_HoldingRegRd (MODBUS_CH  *pch)
                 case MODBUS_ERR_RANGE:
                 default:
                      pch->Err = MODBUS_ERR_FC03_01;
-                     MBS_ErrRespSet(pch,
+                     MBS_ErrRespSet(pch, 
                                     MODBUS_ERR_ILLEGAL_DATA_ADDR);
                      return (DEF_TRUE);
             }
         } else {
 #if (MODBUS_CFG_FP_EN == DEF_ENABLED)
             reg_val_fp = MB_HoldingRegRdFP(reg,                  /* No,  get the value of the FP register                    */
-                                           &err);
+                                           &err);           
             switch (err) {
                 case MODBUS_ERR_NONE:
                      pfp = (CPU_INT08U *)&reg_val_fp;            /* Point to the FP register                                 */
@@ -695,7 +669,7 @@ static  CPU_BOOLEAN  MBS_FC03_HoldingRegRd (MODBUS_CH  *pch)
                 case MODBUS_ERR_RANGE:
                 default:
                      pch->Err = MODBUS_ERR_FC03_02;
-                     MBS_ErrRespSet(pch,
+                     MBS_ErrRespSet(pch, 
                                     MODBUS_ERR_ILLEGAL_DATA_ADDR);
                      return (DEF_TRUE);
             }
@@ -1284,7 +1258,7 @@ static  CPU_BOOLEAN  MBS_FC16_HoldingRegWrMultiple (MODBUS_CH *pch)
 #if SE_MODBUS_CODE > 0
 
     MB_DATA_holdingRegWrMultiple(pch, &err);
-
+    
     switch(err)
     {
        case MODBUS_ERR_RANGE:
@@ -1298,7 +1272,7 @@ static  CPU_BOOLEAN  MBS_FC16_HoldingRegWrMultiple (MODBUS_CH *pch)
        case MODBUS_ERR_ILLEGAL_DATA_VAL:
           pch->Err = MODBUS_ERR_FC16_02;
            MBS_ErrRespSet(pch, MODBUS_ERR_ILLEGAL_DATA_VAL);
-           return (DEF_TRUE);
+           return (DEF_TRUE); 
        default:
           break;
 
@@ -1309,7 +1283,7 @@ static  CPU_BOOLEAN  MBS_FC16_HoldingRegWrMultiple (MODBUS_CH *pch)
     if (reg < MODBUS_CFG_FP_START_IX) {
         if (nbr_regs == 0 || nbr_regs > 125) {                   /* Make sure we don't exceed the allowed limit per request  */
             pch->Err = MODBUS_ERR_FC16_04;
-            MBS_ErrRespSet(pch,
+            MBS_ErrRespSet(pch, 
                            MODBUS_ERR_ILLEGAL_DATA_QTY);
             return (DEF_TRUE);                                   /* Tell caller that we need to send a response              */
         }
@@ -1317,7 +1291,7 @@ static  CPU_BOOLEAN  MBS_FC16_HoldingRegWrMultiple (MODBUS_CH *pch)
     } else {
         if (nbr_regs == 0 || nbr_regs > 62) {                    /* Make sure we don't exceed the allowed limit per request  */
             pch->Err = MODBUS_ERR_FC16_05;
-            MBS_ErrRespSet(pch,
+            MBS_ErrRespSet(pch, 
                            MODBUS_ERR_ILLEGAL_DATA_QTY);
             return (DEF_TRUE);                                   /* Tell caller that we need to send a response              */
         }
@@ -1325,11 +1299,11 @@ static  CPU_BOOLEAN  MBS_FC16_HoldingRegWrMultiple (MODBUS_CH *pch)
     }
 #else
     if (nbr_regs == 0 || nbr_regs > 125) {                       /* Make sure we don't exceed the allowed limit per request  */
-        pch->Err = MODBUS_ERR_FC16_04;
-        MBS_ErrRespSet(pch,
-                       MODBUS_ERR_ILLEGAL_DATA_QTY);
+        pch->Err = MODBUS_ERR_FC16_04;                    
+        MBS_ErrRespSet(pch,                               
+                       MODBUS_ERR_ILLEGAL_DATA_QTY);      
         return (DEF_TRUE);                                       /* Tell caller that we need to send a response              */
-    }
+    }                                                     
     data_size  = sizeof(CPU_INT16U);
 #endif
 
@@ -1337,48 +1311,23 @@ static  CPU_BOOLEAN  MBS_FC16_HoldingRegWrMultiple (MODBUS_CH *pch)
     nbr_bytes = (CPU_INT16U)*prx_data++;
     if ((pch->RxFrameNDataBytes - 5) != nbr_bytes) {             /* Compare actual number of bytes to what they say.         */
         pch->Err = MODBUS_ERR_FC16_01;
-        MBS_ErrRespSet(pch,
+        MBS_ErrRespSet(pch, 
                        MODBUS_ERR_ILLEGAL_DATA_QTY);
         return (DEF_TRUE);
     }
     if ((nbr_bytes / nbr_regs) != (CPU_INT16U)data_size) {
         pch->Err = MODBUS_ERR_FC16_02;
-        MBS_ErrRespSet(pch,
+        MBS_ErrRespSet(pch, 
                        MODBUS_ERR_ILLEGAL_DATA_VAL);
         return (DEF_TRUE);                                       /* Tell caller that we need to send a response              */
     }
-
-    /***********************************************
-    * 描述： 写多个寄存器回调函数
-    */
-    if ( App_MB_WrNRegsHook ( (CPU_INT16U )reg,
-                              (CPU_INT16U*)prx_data,
-                              (CPU_INT16U )nbr_regs,
-                              &err ) ) {
-        if ( err != MODBUS_ERR_NONE ) {
-             pch->Err = MODBUS_ERR_FC16_03;
-             MBS_ErrRespSet(pch,
-                            MODBUS_ERR_ILLEGAL_DATA_ADDR);
-             return (DEF_TRUE);
-        } else {
-            nbr_regs    = 0;
-        }
-    } else {
-        if ( err != MODBUS_ERR_NONE ) {
-             pch->Err = MODBUS_ERR_FC03_02;
-             MBS_ErrRespSet(pch,
-                            MODBUS_ERR_ILLEGAL_DATA_ADDR);
-             return (DEF_TRUE);
-        }
-    }
-
     while (nbr_regs > 0) {
 #if (MODBUS_CFG_FP_EN == DEF_ENABLED)
         if (reg < MODBUS_CFG_FP_START_IX) {
             reg_val_16  = ((CPU_INT16U)*prx_data++) << 8;        /* Get MSB first.                                           */
             reg_val_16 +=  (CPU_INT16U)*prx_data++;              /* Add in the LSB.                                          */
-            MB_HoldingRegWr(reg,
-                            reg_val_16,
+            MB_HoldingRegWr(reg, 
+                            reg_val_16, 
                             &err);
         } else {
             pfp = (CPU_INT08U *)&reg_val_fp;
@@ -1392,18 +1341,18 @@ static  CPU_BOOLEAN  MBS_FC16_HoldingRegWrMultiple (MODBUS_CH *pch)
                 *pfp--   = *prx_data++;
             }
 #endif
-            MB_HoldingRegWrFP(reg,
-                              reg_val_fp,
+            MB_HoldingRegWrFP(reg, 
+                              reg_val_fp, 
                               &err);
         }
-#else
+#else        
         reg_val_16  = ((CPU_INT16U)*prx_data++) << 8;            /* Get MSB first.                                           */
         reg_val_16 +=  (CPU_INT16U)*prx_data++;                  /* Add in the LSB.                                          */
-        MB_HoldingRegWr(reg,
-                        reg_val_16,
-                        &err);
+        MB_HoldingRegWr(reg,                               
+                        reg_val_16,                        
+                        &err);                             
 #endif
-
+        
         switch (err) {                                           /* See if any errors in writing the data                    */
             case MODBUS_ERR_NONE:                                /* Reply with echoe of command received                     */
                  pch->WrCtr++;
@@ -1414,7 +1363,7 @@ static  CPU_BOOLEAN  MBS_FC16_HoldingRegWrMultiple (MODBUS_CH *pch)
             case MODBUS_ERR_RANGE:
             default:
                  pch->Err = MODBUS_ERR_FC16_03;
-                 MBS_ErrRespSet(pch,
+                 MBS_ErrRespSet(pch, 
                                 MODBUS_ERR_ILLEGAL_DATA_ADDR);
                  return (DEF_TRUE);                              /* Tell caller that we need to send a response              */
         }
@@ -1862,6 +1811,8 @@ static  void  MBS_ASCII_Task (MODBUS_CH  *pch)
 }
 #endif
 
+
+
 /*$PAGE*/
 /*
 *********************************************************************************************************
@@ -1877,41 +1828,44 @@ static  void  MBS_ASCII_Task (MODBUS_CH  *pch)
 * Caller(s)   : MBS_RTU_Task().
 *
 * Note(s)     : none.
+//redmorningcn:20180426  接收任务
+//调整:1、将接收数据置调前，漏帧情况。
+	   2、新增非modbus协议接口函数MBN_FCxx_Handler，可进行非modbus协议处理。数据=pch->RxFrameData+pch->RxFrameCRC，数据长度 = pch->RxFrameNDataBytes+2
+       3、非modbus协议通过MODBUS_CFG_NOMODBUS_EN 控制是非支持modbus协议，DEF_ENABLED的为允许。
 *********************************************************************************************************
 */
-
 #if (MODBUS_CFG_SLAVE_EN == DEF_ENABLED) && \
     (MODBUS_CFG_RTU_EN   == DEF_ENABLED)
 static  void  MBS_RTU_Task (MODBUS_CH  *pch)
 {
-    CPU_BOOLEAN     ok;
-    CPU_INT16U      calc_crc;                            /* Used for CRC                                                    */
-    CPU_BOOLEAN     send_reply;
-    OS_ERR          err;
+    CPU_BOOLEAN   ok;
+    CPU_INT16U    calc_crc;                            /* Used for CRC                                                    */
+    CPU_BOOLEAN   send_reply;
 
     pch->StatMsgCtr++;
     if (pch->RxBufByteCtr >= MODBUS_RTU_MIN_MSG_SIZE) {
         ok = MB_RTU_Rx(pch);                           /* Extract received command from .RxBuf[] & move to .RxFrameData[] */
+
+		//redmorningcn	数据读取后，直接置标识位，便于后续数据接收。
+		pch->RxBufByteCtr = 0;
+	    pch->RxBufPtr     = &pch->RxBuf[0];
+		
         if (ok == DEF_TRUE) {
-            /***********************************************
-            * 描述： 2015/12/07增加，用于非MODBBUS通信
-            */
-#if MB_NONMODBUS_EN == DEF_ENABLED
-            if ( ( pch->NonModbusEn == DEF_ENABLED ) && 
-               ( ( pch->RxFrameHead != 0 ) || 
-                 ( pch->RxFrameTail != 0 ) ) ) {
-                pch->RxBufByteCnt   = pch->RxBufByteCtr;
-                send_reply = NMBS_FCxx_Handler(pch);
-                if (send_reply == DEF_TRUE) {
-                    goto exit;
-                }
-            }
-        next:
+			
+	//redmorningcn 20180424  MB_RTU_RX（）完成MODBUS数据读取，数据存在于 pch->RxFrameData（不含crc校验）中，数据数据长度
+	//pch->RxFrameNDataBytes（不含CRC校验），为适应扩展为非MODBUS协议，在此，将CRC也存放到pch->RxFrameData，长度pch->RxFrameNDataBytes+2
+#if (MODBUS_CFG_NOMODBUS_EN == DEF_ENABLED)
+		send_reply = MBN_FCxx_Handler(pch);    /* 非MODBUS数据接收操作，数据=pch->RxFrameData+pch->RxFrameCRC，数据长度 = pch->RxFrameNDataBytes+2 */
 #endif
-            /***********************************************
-            * 描述： MODBUS RTU 从机数据处理
-            */
-            calc_crc = MB_RTU_RxCalcCRC(pch);          /* Do our own calculation of the CRC.                              */
+	//redmorningcn 20180424
+		
+////////////////////////////////////////////MODBUS协议
+#if (MODBUS_CFG_SLAVE_EN == DEF_ENABLED)
+	
+			CPU_INT08U     *pblock;					//解决CVI的debug
+			pblock =  &pch->RxFrameData[0];			//解决CVI的debug （空幅值）		
+
+			calc_crc = MB_RTU_RxCalcCRC(pch);          /* Do our own calculation of the CRC.                              */
             if (calc_crc != pch->RxFrameCRC) {         /* If the calculated CRC does not match the CRC received,          */
                 pch->StatCRCErrCtr++;                  /* then the frame is bad.                                          */
                 pch->StatNoRespCtr++;
@@ -1927,11 +1881,13 @@ static  void  MBS_RTU_Task (MODBUS_CH  *pch)
                 }
             }
         }
+#endif		
     }
-exit:
-    pch->RTU_TimeoutEn  = DEF_TRUE;                      // 重新启动超时（无名沈添加）
-    pch->RxBufByteCtr   = 0;
-    pch->RxBufPtr       = &pch->RxBuf[0];
+	else	   			//原无else
+	{
+	    pch->RxBufByteCtr = 0;
+	    pch->RxBufPtr     = &pch->RxBuf[0];
+	}
 }
 #endif
 

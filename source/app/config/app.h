@@ -16,6 +16,9 @@ extern "C" {
  * INCLUDES
  */
 #include <global.h>
+#include <app_wave.h>
+#include <includes.h>
+
 
     
 
@@ -36,13 +39,27 @@ extern "C" {
 *******************************************************************************/
 typedef struct  
 {
-    uint32  id;             //产品id
-    uint32  addr;           //通讯地址
-    uint8   buf[64];        //预留
-    uint32  cpu_freq;       //cpu频率
-    uint32  time;           //系统全局时间(系统时钟(1/72Mhz) *65536)=约1ms
+    uint32  id;             //产品id       0
+    uint32  addr;           //通讯地址     4
+    uint8   buf[64];        //预留         8
+    uint32  cpu_freq;       //cpu频率      72
+    uint32  time;           //系统全局时间(系统时钟(1/72Mhz) *65536)=约1ms   76
 }strSysPara;    
     
+typedef union _Unnctrl_ {
+    struct{
+        strSysPara  sys;            //公共参数
+        strCoupleChannel    ch;     //产品特有参数
+        MODBUS_CH   	    *pch;   //modbus控制块
+
+    };
+    uint16   buf[512];
+        
+}Unnctrl;
+
+extern  Unnctrl sCtrl;      
+
+
 /*******************************************************************************
  * TYPEDEFS
  */
@@ -69,7 +86,6 @@ typedef struct
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
-extern  strSysPara  sys;
 
 
 /*******************************************************************************

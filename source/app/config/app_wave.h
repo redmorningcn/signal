@@ -109,14 +109,14 @@ typedef struct
     }para[2];
     
     uint32  ch1_2phase;                                     //相位差，0.00-360.00°
-    uint32  vcc_vol;                                        //供电电压
+    uint16  vcc_vol;                                        //供电电压
+    uint16  stand_vol;                                      //参考电压
 }strCoupleChannel;
 
 
 /*******************************************************************************
  * GLOBAL VARIABLES
  */
-extern  strCoupleChannel    ch;                            //通道信号
 
 
 /*******************************************************************************

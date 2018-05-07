@@ -123,7 +123,7 @@ void  MB_Init (CPU_INT32U freq)
 #endif
 
     pch         = &MB_ChTbl[0];                      /* Save Modbus channel number in data structure   */
-    for (ch = 0; ch < MODBUS_CFG_MAX_CH; ch++) {     /* Initialize default values                          */
+    for (ch = 0; ch < MODBUS_CFG_MAX_CH; ch++) {                /* Initialize default values                          */
         pch->Ch            = ch;
         pch->NodeAddr      = 1;
         pch->MasterSlave   = MODBUS_SLAVE;           /* Channel defaults to MODBUS_SLAVE mode          */
@@ -145,10 +145,10 @@ void  MB_Init (CPU_INT32U freq)
 
     MB_ChCtr = 0;
 
-//    MB_OS_Init();                                       /* Initialize OS interface functions              */
+    MB_OS_Init();                                    /* Initialize OS interface functions              */
 
 
-#if (MODBUS_CFG_RTU_EN == DEF_ENABLED)                  /* MODBUS 'RTU' Initialization                         */
+#if (MODBUS_CFG_RTU_EN == DEF_ENABLED)                         /* MODBUS 'RTU' Initialization                         */
     MB_RTU_TmrInit();
 #else
     (void)&freq;
@@ -170,6 +170,7 @@ void  MB_Init (CPU_INT32U freq)
 * Note(s)     : none.
 *********************************************************************************************************
 */
+
 void  MB_Exit (void)
 {
 #if (MODBUS_CFG_RTU_EN == DEF_ENABLED)
@@ -180,6 +181,7 @@ void  MB_Exit (void)
 
     MB_OS_Exit();                                    /* Stop RTOS services                             */
 }
+
 
 /*
 *********************************************************************************************************
@@ -198,7 +200,7 @@ void  MB_Exit (void)
 *                             MODBUS_MODE_ASCII
 *                             MODBUS_MODE_RTU
 *
-*               port_nbr      is the UART port number associated with the channel, 0 <= port_nbr < MODBUS_CFG_MAX_CH
+*               port_nbr      is the UART port number associated with the channel
 *
 *               baud          is the desired baud rate
 *
@@ -223,6 +225,7 @@ void  MB_Exit (void)
 * Note(s)     : none.
 *********************************************************************************************************
 */
+
 MODBUS_CH  *MB_CfgCh (CPU_INT08U  node_addr,
                       CPU_INT08U  master_slave,
                       CPU_INT32U  rx_timeout,
@@ -253,15 +256,12 @@ MODBUS_CH  *MB_CfgCh (CPU_INT08U  node_addr,
         }
 
         cnts = ((CPU_INT32U)MB_RTU_Freq * 5L * 10L) / baud;           /* Freq * 5 char * 10 bits/char * 1/BaudRate  */
-        if (cnts <= 5) {
-            cnts = 5;
+        if (cnts <= 1) {
+            cnts = 2;
         }
         pch->RTU_TimeoutCnts = cnts;
         pch->RTU_TimeoutCtr  = cnts;
 #endif
-        pch->RxSem  = &MB_OS_RxSemTbl[port_nbr];                      // port_nbr < MODBUS_CFG_MAX_CH
-        pch->TxSem  = &MB_OS_TxSemTbl[port_nbr];                      // port_nbr < MODBUS_CFG_MAX_CH 
-        
         MB_ChCtr++;
         return (pch);
     } else {
@@ -288,6 +288,7 @@ MODBUS_CH  *MB_CfgCh (CPU_INT08U  node_addr,
 * Note(s)     : none.
 *********************************************************************************************************
 */
+
 void  MB_MasterTimeoutSet (MODBUS_CH  *pch,
                            CPU_INT32U  timeout)
 {
@@ -315,6 +316,7 @@ void  MB_MasterTimeoutSet (MODBUS_CH  *pch,
 * Note(s)     : none.
 *********************************************************************************************************
 */
+
 void  MB_ModeSet (MODBUS_CH  *pch,
                   CPU_INT08U  master_slave,
                   CPU_INT08U  mode)
@@ -373,6 +375,7 @@ void  MB_ModeSet (MODBUS_CH  *pch,
 * Note(s)     : none.
 *********************************************************************************************************
 */
+
 void  MB_NodeAddrSet (MODBUS_CH  *pch,
                       CPU_INT08U  node_addr)
 {
@@ -401,6 +404,7 @@ void  MB_NodeAddrSet (MODBUS_CH  *pch,
 * Note(s)     : none.
 *********************************************************************************************************
 */
+
 void  MB_WrEnSet (MODBUS_CH  *pch,
                   CPU_INT08U  wr_en)
 {
@@ -408,6 +412,7 @@ void  MB_WrEnSet (MODBUS_CH  *pch,
         pch->WrEn = wr_en;
     }
 }
+
 
 /*
 *********************************************************************************************************
@@ -426,6 +431,7 @@ void  MB_WrEnSet (MODBUS_CH  *pch,
 * Note(s)     : none.
 *********************************************************************************************************
 */
+
 void  MB_ChToPortMap (MODBUS_CH  *pch,
                       CPU_INT08U  port_nbr)
 {
@@ -453,6 +459,7 @@ void  MB_ChToPortMap (MODBUS_CH  *pch,
 * Note(s)     : none.
 *********************************************************************************************************
 */
+
 void  MB_RxByte (MODBUS_CH  *pch,
                  CPU_INT08U  rx_byte)
 {
@@ -490,6 +497,7 @@ void  MB_RxByte (MODBUS_CH  *pch,
 * Note(s)     : none.
 *********************************************************************************************************
 */
+
 void  MB_RxTask (MODBUS_CH *pch)
 {
 #if (MODBUS_CFG_SLAVE_EN == DEF_ENABLED)
@@ -516,6 +524,7 @@ void  MB_RxTask (MODBUS_CH *pch)
 * Note(s)     : none.
 *********************************************************************************************************
 */
+
 void  MB_Tx (MODBUS_CH  *pch)
 {
     pch->TxBufPtr = &pch->TxBuf[0];
@@ -543,20 +552,22 @@ void  MB_Tx (MODBUS_CH  *pch)
 * Note(s)     : none.
 *********************************************************************************************************
 */
+
 void  MB_TxByte (MODBUS_CH  *pch)
 {
     CPU_INT08U  c;
+
 
     if (pch->TxBufByteCtr > 0) {
         pch->TxBufByteCtr--;
         pch->TxCtr++;
         c = *pch->TxBufPtr++;
-        MB_CommTx1(pch,c);                         /* Write one byte to the serial port                  */
-                                                        
+        MB_CommTx1(pch,                                         /* Write one byte to the serial port                  */
+                   c);                                     
 #if (MODBUS_CFG_MASTER_EN == DEF_ENABLED)
         if (pch->MasterSlave == MODBUS_MASTER) {
 #if (MODBUS_CFG_RTU_EN == DEF_ENABLED)
-            pch->RTU_TimeoutEn = MODBUS_FALSE;     /* Disable RTU timeout timer until we start receiving */
+            pch->RTU_TimeoutEn = MODBUS_FALSE;                  /* Disable RTU timeout timer until we start receiving */
 #endif            
             pch->RxBufByteCtr  = 0;                /* Flush Rx buffer                                           */
         }
@@ -587,6 +598,7 @@ void  MB_TxByte (MODBUS_CH  *pch)
 * Return(s)   : none.
 *********************************************************************************************************
 */
+
 #if (MODBUS_CFG_ASCII_EN == DEF_ENABLED)
 void  MB_ASCII_RxByte (MODBUS_CH  *pch,
                        CPU_INT08U  rx_byte)
@@ -637,6 +649,7 @@ void  MB_ASCII_RxByte (MODBUS_CH  *pch,
 * Note(s)     : none.
 *********************************************************************************************************
 */
+
 #if (MODBUS_CFG_ASCII_EN == DEF_ENABLED)
 CPU_BOOLEAN  MB_ASCII_Rx (MODBUS_CH  *pch)
 {
@@ -689,6 +702,7 @@ CPU_BOOLEAN  MB_ASCII_Rx (MODBUS_CH  *pch)
 * Note(s)     : none.   
 *********************************************************************************************************
 */
+
 #if (MODBUS_CFG_ASCII_EN == DEF_ENABLED)
 void  MB_ASCII_Tx (MODBUS_CH  *pch)
 {
@@ -751,17 +765,16 @@ void  MB_ASCII_Tx (MODBUS_CH  *pch)
 void  MB_RTU_RxByte (MODBUS_CH  *pch,
                      CPU_INT08U  rx_byte)
 {
-    MB_RTU_TmrReset(pch);                                       /* Reset the timeout timer on a new character               */
+    MB_RTU_TmrReset(pch);                                         /* Reset the timeout timer on a new character               */
 #if (MODBUS_CFG_MASTER_EN == DEF_ENABLED)
-    if (pch->MasterSlave == MODBUS_MASTER) {                  // 无名沈注释掉
+    if (pch->MasterSlave == MODBUS_MASTER) {
         pch->RTU_TimeoutEn = MODBUS_TRUE;
-        pch->RTU_TimeoutCtr = pch->RTU_TimeoutCnts;
-    }                                                         // 无名沈注释掉
+    }
 #endif
     if (pch->RxBufByteCtr < MODBUS_CFG_BUF_SIZE) {              /* No, add received byte to buffer                        */
-        pch->RxCtr++;                                           /* Increment the number of bytes received                   */
+        pch->RxCtr++;                                             /* Increment the number of bytes received                   */
         *pch->RxBufPtr++ = rx_byte;
-        pch->RxBufByteCtr++;                                    /* Increment byte counter to see if we have Rx activity     */
+        pch->RxBufByteCtr++;                                      /* Increment byte counter to see if we have Rx activity     */
     }
 }
 #endif
@@ -793,16 +806,8 @@ CPU_BOOLEAN  MB_RTU_Rx (MODBUS_CH  *pch)
     CPU_INT16U     rx_size;
     CPU_INT16U     crc;
 
-
     pmsg    = &pch->RxBuf[0];
-    
-#if MB_AES_EN == DEF_ENABLED  
-    if ( pch->AesEn )
-      pch->RxBufByteCtr = MB_AESCbcDecrypt(pch->RxBuf,pch->RxBufByteCtr);
-#endif
-    
     rx_size =  pch->RxBufByteCtr;
-    
     if (rx_size >= MODBUS_RTU_MIN_MSG_SIZE) {         /* Is the message long enough?                        */
         if (rx_size <= MODBUS_CFG_BUF_SIZE) {
             prx_data    = &pch->RxFrameData[0];
@@ -875,14 +880,8 @@ void  MB_RTU_Tx (MODBUS_CH  *pch)
     *pbuf             = (CPU_INT08U)(crc >> 8);
     tx_bytes         += 2;
     pch->TxFrameCRC   = crc;                                       /* Save the calculated CRC in the channel                   */
-    
     pch->TxBufByteCtr = tx_bytes;
-    
-#if MB_AES_EN == DEF_ENABLED  
-    if ( pch->AesEn )
-      pch->TxBufByteCtr = MB_AESCbcEncrypt(pch->TxBuf,pch->TxBufByteCtr);
-#endif
-    
+
     MB_Tx(pch);                                                    /* Send it out the communication driver.                    */
 }
 #endif
@@ -969,7 +968,6 @@ void  MB_RTU_TmrUpdate (void)
     CPU_INT08U   ch;
     MODBUS_CH   *pch;
 
-
     pch = &MB_ChTbl[0];
     for (ch = 0; ch < MODBUS_CFG_MAX_CH; ch++) {
         if (pch->Mode == MODBUS_MODE_RTU) {
@@ -978,9 +976,9 @@ void  MB_RTU_TmrUpdate (void)
                     pch->RTU_TimeoutCtr--;
                     if (pch->RTU_TimeoutCtr == 0) {
 #if (MODBUS_CFG_RTU_EN == DEF_ENABLED)
-                        //if (pch->MasterSlave == MODBUS_MASTER) {  // 无名沈注释掉
+                        if (pch->MasterSlave == MODBUS_MASTER) {
                             pch->RTU_TimeoutEn = DEF_FALSE;
-                        //}                                         // 无名沈注释掉
+                        }
 #endif
                         MB_OS_RxSignal(pch);          /* RTU Timer expired for this Modbus channel         */
                     }
@@ -991,51 +989,5 @@ void  MB_RTU_TmrUpdate (void)
         }
         pch++;
     }
-}
-#endif
-
-/*******************************************************************************
- * 名    称： NMB_Tx
- * 功    能： 非MODBUS通信协议发送
- * 入口参数： 无
- * 出口参数： 无
- * 作  　者： 无名沈
- * 创建日期： 2015-03-28
- * 修    改：
- * 修改日期：
- * 备    注： 该初始化会创建Modbus任务。
- *******************************************************************************/
-
-#if (MB_NONMODBUS_EN == DEF_ENABLED)
-void NMB_Tx(MODBUS_CH   *pch,
-            CPU_INT08U  *p_reg_tbl,
-            CPU_INT16U   nbr_bytes)
-{
-    CPU_INT08U  *ptx_data;
-    CPU_INT08U  *pbuf;
-    CPU_INT08U   i;
-
-    pbuf      = &pch->TxBuf[0];                                     /* Point to the beginning of the output buffer.             */
-    ptx_data  = p_reg_tbl;
-    i         = nbr_bytes;                                          /* Include the actual data in the buffer                    */
-    
-    while (i > 0) {
-        *pbuf++ = *ptx_data++;
-        i--;
-    }
-    
-    pch->TxBufByteCtr = nbr_bytes;
-    
-#if MB_AES_EN == DEF_ENABLED  
-    if ( pch->AesEn )
-      pch->TxBufByteCtr = MB_AESCbcEncrypt(pch->TxBuf,pch->TxBufByteCtr);
-#endif
-    if (pch->MasterSlave == MODBUS_MASTER) {
-        CPU_INT16U      err;
-        MB_OS_TxWait(pch,&err);
-        if ( err != MODBUS_ERR_NONE )
-            return;
-    }
-    MB_Tx(pch);                                                    /* Send it out the communication driver.                    */
 }
 #endif

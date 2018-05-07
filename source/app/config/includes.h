@@ -71,10 +71,10 @@
 /***********************************************
 * √Ë ˆ£∫uC/MODBUS
 */
-//#include  <MB_DEF.H>
-//#include  <MB.h>
+#include  <MB_DEF.H>
+#include  <MB.h>
 //#include  <MB_OS.h>
-//#include  <MB_CFG.H>
+#include  <MB_CFG.H>
 
 /***********************************************
 * √Ë ˆ£∫ APP

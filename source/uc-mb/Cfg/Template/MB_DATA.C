@@ -27,42 +27,14 @@
 
 
 #include <mb.h>
-#include <os.h>
-#include <app.h>
-#include <bsp_time.h>
-#include <bsp_eeprom.h>
-#include <includes.h>
 #include <global.h>
+#include <app.h>
 
-/*******************************************************************************
-* 名    称： exchangeBytes
-* 功    能： 模拟的htons 或者 ntohs，如果系统支字节序更改可直接替换成系统函数
-* 入口参数： value
-* 出口参数： 更改过字节序的short数值
-* 作　 　者： 无名沈.
-* 创建日期： 2015-06-25
-* 修    改：
-* 修改日期：
-* 备    注：
-*******************************************************************************/
-//int16_t	exchangeBytes(int16_t	value)
-//{
-//	int16_t		tmp_value;
-//	uint8_t		*index_1, *index_2;
-//
-//	index_1 = (uint8_t *)&tmp_value;
-//	index_2 = (uint8_t *)&value;
-//
-//	*index_1 = *(index_2+1);
-//	*(index_1+1) = *index_2;
-//
-//	return tmp_value;
-//}
 
-#if MODBUS_CFG_SLAVE_EN == DEF_ENABLED
-StrMbData   mbData  = {MB_DATA_NBR_REGS, MB_DATA_NBR_COILS, 0,0,0};
-#endif
-#define BSP_I2CSetPort(a)		{}
+
+						 
+
+
 /*$PAGE*/
 /*
 *********************************************************************************************************
@@ -94,21 +66,24 @@ CPU_BOOLEAN  MB_CoilRd (CPU_INT16U   coil,
     /***********************************************
     * 描述： 密码确认，通讯前先将MB_DATA_ACC_PASSWORD写入reg0
     */
-    if ( Ctrl.Para.dat.Password != MB_DATA_ACC_PASSWORD ) {
-        *perr = MODBUS_ERR_ILLEGAL_DATA_ADDR;
-        return 0;
-    }
+//    if ( Ctrl.Para.dat.Password != MB_DATA_ACC_PASSWORD ) {
+//    if ( sCtrl.buf.Password != MB_DATA_ACC_PASSWORD ) {
+//        *perr = MODBUS_ERR_ILLEGAL_DATA_ADDR;
+//        return 0;
+//    }
     
     CPU_BOOLEAN     coil_val;
     CPU_INT16U      reg         = coil / 16;        // 获取当前寄存器
     CPU_INT08U      bit         = coil % 16;        // 获取当前寄存器的位
     CPU_INT16U      reg_val;
     //CPU_INT16U      *preg       = (CPU_INT16U *) Ctrl.Para.buf2;
-    CPU_INT16U *preg       = (CPU_INT16U *)& Ctrl.Para.buf2[0];
+    //CPU_INT16U *preg       = (CPU_INT16U *)& Ctrl.Para.buf2[0];
+    
+    CPU_INT16U *preg       = (CPU_INT16U *)& sCtrl.buf;
     /***********************************************
     * 描述： 获取值
     */
-    if ( reg < sizeof(Ctrl) / 2 ) {
+    if ( reg < sizeof(sCtrl.buf) / 2 ) {
         reg_val = preg[reg];
         *perr = MODBUS_ERR_NONE;
     } else {
@@ -159,17 +134,10 @@ void  MB_CoilWr (CPU_INT16U    coil,
                  CPU_BOOLEAN   coil_val,
                  CPU_INT16U   *perr)
 {
-    /***********************************************
-    * 描述： 密码确认，通讯前先将MB_DATA_ACC_PASSWORD写入reg0
-    */
-    if ( Ctrl.Para.dat.Password != MB_DATA_ACC_PASSWORD ) {
-        *perr = MODBUS_ERR_ILLEGAL_DATA_ADDR;
-        return;
-    }
-    
+
     (void)coil;
     (void)coil_val;
-    CPU_SR          cpu_sr;
+    //CPU_SR          cpu_sr;
     CPU_INT16U      reg         = coil / 16;
     CPU_INT08U      bit         = coil % 16;
     CPU_INT16U      reg_val     = 0;
@@ -181,21 +149,23 @@ void  MB_CoilWr (CPU_INT16U    coil,
     reg_val         |= coil_val << bit;
     
     //CPU_INT16U      *preg       = (CPU_INT16U *) Ctrl.Para.buf2;
-    CPU_INT16U *preg       = (CPU_INT16U *)& Ctrl.Para.buf2[0];
+    CPU_INT16U *preg       = (CPU_INT16U *)& sCtrl.buf; //首地址
     /***********************************************
     * 描述： 获取值
     */
-    if ( reg < sizeof(Ctrl) / 2 ) {
+    if ( reg < sizeof(sCtrl.buf) / 2 ) {
         /***********************************************
         * 描述：
         */
         if ( reg < 127 ) {
             int idx = reg - 0;
             
+            //CPU_CRITICAL_ENTER();
             temp          = preg[idx];
             ( reg_val )   ? ( reg_val = reg_val | temp )
                 : ( reg_val =~reg_val & temp );
                 preg[idx]       = reg_val;
+                //CPU_CRITICAL_EXIT();
         }
         *perr = MODBUS_ERR_NONE;
     } else {
@@ -273,32 +243,43 @@ CPU_INT16U  MB_InRegRd (CPU_INT16U   reg,
                         CPU_INT16U  *perr)
 {
     CPU_INT16U  val;
-    CPU_SR      cpu_sr;
-
+    //CPU_SR      cpu_sr;
 
     switch (reg) {
         case 10:
-             val = (CPU_INT16U)OSCPUUsage;
+             //CPU_CRITICAL_ENTER();
+             //val = (CPU_INT16U)OSCPUUsage;
+             //CPU_CRITICAL_EXIT();
              break;
 
         case 11:
-             val = (CPU_INT16U)OSCtxSwCtr;
+             //CPU_CRITICAL_ENTER();
+             //val = (CPU_INT16U)OSCtxSwCtr;
+             //CPU_CRITICAL_EXIT();
              break;
 
         case 12:
-             val = (CPU_INT16U)(OSTime >> 16);
+             //CPU_CRITICAL_ENTER();
+             //val = (CPU_INT16U)(OSTime >> 16);
+             //CPU_CRITICAL_EXIT();
              break;
 
         case 13:
-             val = (CPU_INT16U)(OSTime & 0x0000FFFF);
+             //CPU_CRITICAL_ENTER();
+             //val = (CPU_INT16U)(OSTime & 0x0000FFFF);
+             //CPU_CRITICAL_EXIT();
              break;
 
         case 14:
-             val = (CPU_INT16U)MB_ChSize;
+             //CPU_CRITICAL_ENTER();
+             //val = (CPU_INT16U)MB_ChSize;
+             //CPU_CRITICAL_EXIT();
              break;
 
         case 15:
-             val = (CPU_INT16U)(MB_TotalRAMSize & 0x0000FFFF);
+             //CPU_CRITICAL_ENTER();
+             //val = (CPU_INT16U)(MB_TotalRAMSize & 0x0000FFFF);
+             //CPU_CRITICAL_EXIT();
              break;
 
         default:
@@ -383,23 +364,19 @@ CPU_INT16U  MB_HoldingRegRd (CPU_INT16U   reg,
                              CPU_INT16U  *perr)
 {
     CPU_INT16U  reg_val;
-    CPU_SR      cpu_sr;
+    //CPU_SR      cpu_sr;
 
-    /***********************************************
-    * 描述： 密码确认，通讯前先将MB_DATA_ACC_PASSWORD写入reg0
-    */
-    if ( Ctrl.Para.dat.Password != MB_DATA_ACC_PASSWORD ) {
-        *perr = MODBUS_ERR_ILLEGAL_DATA_ADDR;
-        return 0;
-    }
-        
-    //CPU_INT16U *preg       = (CPU_INT16U *)& Ctrl.Sen.H.AdcValue;//Para.buf2;
-    CPU_INT16U *preg       = (CPU_INT16U *)& Ctrl.Para.buf2[0];
+
+//        
+//    CPU_INT16U *preg       = (CPU_INT16U *)& Ctrl.Para.buf2[0];
+    CPU_INT16U *preg   	= (CPU_INT16U *)&sCtrl.buf[0];
     /***********************************************
     * 描述： 获取值
     */
-    if ( reg < sizeof(Ctrl) / 2 ) {
+    if ( reg < sizeof(sCtrl.buf) / 2 ) {
+        //CPU_CRITICAL_ENTER();
         reg_val = preg[reg];
+        //CPU_CRITICAL_EXIT();
         *perr = MODBUS_ERR_NONE;
     } else {
         reg_val = 0;
@@ -446,26 +423,25 @@ CPU_FP32  MB_HoldingRegRdFP (CPU_INT16U   reg,
 {
     (void)reg;    
     
-    /***********************************************
-    * 描述： 密码确认，通讯前先将MB_DATA_ACC_PASSWORD写入reg0
-    */
-    if ( Ctrl.Para.dat.Password != MB_DATA_ACC_PASSWORD ) {
-        *perr = MODBUS_ERR_ILLEGAL_DATA_ADDR;
-        return 0;
-    }
+
     /***********************************************
     * 描述： 浮点寄存器
     */
-    CPU_FP32   *preg        = (CPU_FP32 *)&Ctrl.Sen.Para.buf3[0];
+//    CPU_FP32   *preg        = (CPU_FP32 *)&Ctrl.Sen.Para.buf3[0];
+    CPU_FP32   *preg        = (CPU_FP32 *)&sCtrl.buf;   //取首地址
+    
     reg        = reg - MODBUS_CFG_FP_START_IX;
     CPU_FP32   reg_val      = 0;
     
     /***********************************************
     * 描述： 获取值
     */
-    if ( reg < sizeof(UnionSenPara) / 4 ) {
+    if ( reg < sizeof(sCtrl.buf) / 4 ) {
         preg    += reg;
+        //CPU_SR_ALLOC();
+        //CPU_CRITICAL_ENTER();
         reg_val     = *preg;
+        //CPU_CRITICAL_EXIT();
         *perr = MODBUS_ERR_NONE;
     } else {
         *perr = MODBUS_ERR_RANGE;
@@ -514,88 +490,29 @@ void  MB_HoldingRegWr (CPU_INT16U   reg,
                        CPU_INT16U   reg_val,
                        CPU_INT16U  *perr)
 {
-#if 0
     /* Access to your variable here! */
     (void)reg;
     (void)reg_val;
     
-    /***********************************************
-    * 描述： 密码确认，通讯前先将MB_DATA_ACC_PASSWORD写入reg0
-    */
-    if ( ( Ctrl.Para.dat.Password == MB_DATA_ACC_PASSWORD ) ||
-         ( ( reg == 0 ) && ( reg_val == MB_DATA_ACC_PASSWORD ) ) ) {
-    } else {
-        *perr = MODBUS_ERR_ILLEGAL_DATA_ADDR;
-        return;
-    }
+//    CPU_INT16U *preg       = (CPU_INT16U *)& Ctrl.Para.buf2[0];
+    CPU_INT16U *preg       = (CPU_INT16U *)&sCtrl.buf;             //取首地址
     
-    CPU_INT16U *preg       = (CPU_INT16U *)& Ctrl.Para.buf2[0];
-     
     /***********************************************
-    * 描述： 获取值
+    * 描述： 在指定地址写入数据
     */
-    if ( reg < sizeof(Ctrl) / 2 ) {
+    if ( reg < sizeof(sCtrl.buf) / 2 ) {
         preg    += reg;
         /***********************************************
         * 描述： 写入测量模块校准参数
         */    
-        extern BOOL App_SetParaToSensor(INT08U dev, INT32U addr, INT08U *dat, INT16U len);
-        if ( preg == &Ctrl.Para.buf2[58] ) {
-            if ( ( reg_val & 0x0001 ) == 0x0001 ) {
-                NVIC_SystemReset();                        // 重启（core_cm3.h文件提供该函数）
-            }
-        } else if ( ( preg > &Ctrl.Para.buf2[0] ) &&
-             ( preg <= &Ctrl.Para.buf2[127] ) ) {
-            BSP_I2CSetPort(2);
-            
-            INT16U addr = (preg - &Ctrl.Para.buf2[0])*2;
-            //INT08U *pb  = (INT08U *)preg;
-            
-            if ( !BSP_EEP_WriteINT16U (addr, reg_val ) ) {
-            //if ( !App_SetParaToSensor(2, addr, NULL, 2) ) {
-                *perr = MODBUS_ERR_ILLEGAL_DATA_VAL;
-                return;
-            }
-        /***********************************************
-        * 描述： 写入传感器模块校准参数
-        */
-        } else if ( ( preg >= &Ctrl.Sen.Para.buf2[0] ) &&
-                    ( preg <= &Ctrl.Sen.Para.buf2[128] ) ) {
-            BSP_I2CSetPort(1);
-            INT16U addr = (preg - Ctrl.Sen.Para.buf2)*2;
-            //INT08U *pb  = (INT08U *)preg;
-            
-            //if ( App_SetParaToEep(addr, NULL, 2 ) ) {
-            if ( !BSP_EEP_WriteINT16U (addr, reg_val ) ) {
-                *perr = MODBUS_ERR_ILLEGAL_DATA_VAL;
-                BSP_I2CSetPort(2);
-                return;
-            }
-            BSP_I2CSetPort(2);
-//        } else if ( ( preg > (INT16U *)&Ctrl.Tab ) &&
-//             ( preg <= (INT16U *)&Ctrl.Tab.buf2[127] ) ) {
-//            BSP_I2CSetPort(2);
-//            
-//            INT16U addr = (preg - (INT16U *)&Ctrl.Tab.buf2)*2+256;
-//            INT08U *pb  = (INT08U *)preg;
-//            
-//            if ( !BSP_EEP_WriteINT16U (addr, reg_val ) ) {
-//            //if ( App_SetParaToEep(addr, NULL, 2 ) ) { 
-//                *perr = MODBUS_ERR_ILLEGAL_DATA_VAL;
-//                return;
-//            }
-        /***********************************************
-        * 描述： 写入测量模块校准参数
-        */
-        }
-        
+        //CPU_SR_ALLOC();
+        //CPU_CRITICAL_ENTER();
         *preg       = reg_val;
-        
+        //CPU_CRITICAL_EXIT();
         *perr = MODBUS_ERR_NONE;
     } else {
         *perr = MODBUS_ERR_ILLEGAL_DATA_ADDR;
     }    
-#endif
 }
 #endif
 
@@ -644,25 +561,24 @@ void  MB_HoldingRegWrFP (CPU_INT16U   reg,
     (void)reg;
     (void)reg_val_fp;
         
-    /***********************************************
-    * 描述： 密码确认，通讯前先将MB_DATA_ACC_PASSWORD写入reg0
-    */
-    if ( Ctrl.Para.dat.Password != MB_DATA_ACC_PASSWORD ) {
-        *perr = MODBUS_ERR_ILLEGAL_DATA_ADDR;
-        return;
-    }
+
     
     /***********************************************
     * 描述： 浮点寄存器
     */
-    CPU_FP32   *preg      = (CPU_FP32 *)&Ctrl.Sen.Para.buf3[0];
+//    CPU_FP32   *preg      = (CPU_FP32 *)&Ctrl.Sen.Para.buf3[0];
+    CPU_FP32   *preg       = (CPU_FP32 *)&sCtrl.buf;   //取首地址
+
     reg        = reg - MODBUS_CFG_FP_START_IX;
     /***********************************************
     * 描述： 获取值
     */
-    if ( reg < sizeof(UnionSenPara) / 4 ) {
+    if ( reg < sizeof(sCtrl.buf) / 4 ) {
         preg    += reg;
+        //CPU_SR_ALLOC();
+        //CPU_CRITICAL_ENTER();
         *preg    = reg_val_fp;
+        //CPU_CRITICAL_EXIT();
         *perr = MODBUS_ERR_NONE;
     } else {
         *perr = MODBUS_ERR_RANGE;
@@ -788,9 +704,9 @@ CPU_BOOLEAN NON_MBS_FCxx_Handler (MODBUS_CH  *pch)
     /***********************************************
     * 描述： 调用串口数据处理回调函数
     */
-    extern INT08U APP_CommRxDataDealCB(MODBUS_CH  *pch);
-    
-    return APP_CommRxDataDealCB(pch);
+//    extern INT08U APP_CommRxDataDealCB(MODBUS_CH  *pch);
+//    
+//    return APP_CommRxDataDealCB(pch);
 }
 #endif
 
