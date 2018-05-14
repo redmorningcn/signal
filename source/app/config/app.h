@@ -37,20 +37,23 @@ extern "C" {
 * Description  : 系统运行参数
 * Author       : 2018/3/14 星期三, by redmorningcn
 *******************************************************************************/
+__packed
 typedef struct  
 {
     uint32  id;             //产品id       0
-    uint32  addr;           //通讯地址     4
+    uint32  num;            //产品编号     4
     uint8   buf[64];        //预留         8
     uint32  cpu_freq;       //cpu频率      72
     uint32  time;           //系统全局时间(系统时钟(1/72Mhz) *65536)=约1ms   76
 }strSysPara;    
     
+
+__packed
 typedef union _Unnctrl_ {
     struct{
-        strSysPara  sys;            //公共参数
-        strCoupleChannel    ch;     //产品特有参数
-        MODBUS_CH   	    *pch;   //modbus控制块
+        strSysPara          sys;        //公共参数
+        strCoupleChannel    ch;         //产品特有参数
+        MODBUS_CH   	    *pch;       //modbus控制块
 
     };
     uint16   buf[512];

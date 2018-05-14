@@ -36,12 +36,12 @@ uint8   get_boardID(void)
 	Delay_Nus(10);
 	if(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_11))
 	{
-		id |= 0x2;
+		id |= 0x1;
 	}
     
 	if(GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_12))
 	{
-		id |= 0x01;
+		id |= 0x02;
 	}
     
 	return id;

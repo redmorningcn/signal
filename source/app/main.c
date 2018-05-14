@@ -150,9 +150,8 @@ void main (void)
     *******************************************************************************/
     MB_Init(1000);      //≥ı ºªØmodbus∆µ¬ 					
 
-    ModbusNode        = sCtrl.sys.id;
-    
-    sCtrl.pch         = MB_CfgCh( ModbusNode,        	// ... Modbus Node # for this slave channel
+    sCtrl.pch         = MB_CfgCh( sCtrl.sys.id,        	// ... Modbus Node # for this slave channel
+                        //MB_CfgCh( ModbusNode,        	// ... Modbus Node # for this slave channel
                         MODBUS_SLAVE,           // ... This is a MASTER
                         500,                    // ... 0 when a slave
                         MODBUS_MODE_RTU,        // ... Modbus Mode (_ASCII or _RTU)
