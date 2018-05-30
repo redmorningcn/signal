@@ -26,6 +26,7 @@ void    app_calc_ch_timepara(void)
     uint64  ratiotime;
     
     uint8   i;
+    
         
     for(i = 0;i< 2;i++)
     {
@@ -49,11 +50,11 @@ void    app_calc_ch_timepara(void)
             starttime   =   sCtrl.ch.test[i].time[p_read].low_up_time  * 65536 
                         +   sCtrl.ch.test[i].time[p_read].low_up_cnt  ;
             
-            p_read      =   (sCtrl.ch.test[i].p_read + 1) % CH_TIMEPARA_BUF_SIZE;       //防止越界
+            p_read      =   (sCtrl.ch.test[i].p_read + 1) % CH_TIMEPARA_BUF_SIZE;   //防止越界
             endtime     =   sCtrl.ch.test[i].time[p_read].low_up_time  * 65536 
                         +   sCtrl.ch.test[i].time[p_read].low_up_cnt  ;
             
-            if(starttime > endtime)             //防止翻转
+            if(starttime > endtime)                                                 //防止翻转
             {
                 endtime += 65536;
             }
@@ -62,9 +63,9 @@ void    app_calc_ch_timepara(void)
             sCtrl.ch.para[i].period = (periodtime * 1000*1000*100 )/ sCtrl.sys.cpu_freq;
             
             if(periodtime){
-                sCtrl.ch.para[i].freq = sCtrl.sys.cpu_freq  / periodtime;   //计算频率
+                sCtrl.ch.para[i].freq = sCtrl.sys.cpu_freq  / periodtime;           //计算频率
                 
-                if(((sCtrl.sys.cpu_freq *10) % periodtime)> 4 )       //四舍五入
+                if(((sCtrl.sys.cpu_freq *10) % periodtime)> 4 )                     //四舍五入
                     sCtrl.ch.para[i].freq += 1;
             }
             
@@ -150,6 +151,34 @@ void    app_calc_ch_timepara(void)
                 sCtrl.ch.ch1_2phase = 360*(endtime - starttime)*100 / periodtime; 
             }
 
+            /**************************************************************
+            * Description  : 传感器丢脉冲判断
+            判断方法：对比前后脉冲周期，如果周期偏差大于%50，认为丢脉冲。
+            * Author       : 2018/5/30 星期三, by redmorningcn
+            */
+            static  u32     plusetimes[2];          //正常脉冲计算器。从产生错误开始计数
+            static  u8      perioderrcnt[2];        //周期错误计数器。每产生一次错误加1，一圈内周期都正常，清除。
+            static  u32     lastperiod[2];          //上次周期
+            
+            //前后周期对比
+            if(sCtrl.ch.para[i].period * PERIOD_ERR_CALI < lastperiod[i] ){
+                plusetimes[i] = 0;
+                perioderrcnt[i]++;
+                
+                if(perioderrcnt[i] > PERIOD_ERR_CNT){
+                    sCtrl.ch.para[i].status.lose = 1;   
+                }
+            }else{
+                plusetimes[i]++;                        
+                
+                if(plusetimes[i] > CIRCLE_PLUSE_NUM )   // 如果产生的错误，经过1圈后，未在发生，则认为是误判。
+                {
+                    perioderrcnt[i] = 0;                // 错误计数器清零
+                    sCtrl.ch.para[i].status.lose = 0;   
+                }
+            }
+            lastperiod[i] = sCtrl.ch.para[i].period;    // 下次判断使用
+            
             //读指正++
             sCtrl.ch.test[i].p_read++ ;
             sCtrl.ch.test[i].p_read %= CH_TIMEPARA_BUF_SIZE; 
@@ -170,11 +199,13 @@ void    app_calc_ch_voltagepara(void)
     static  uint8   lockflg[2]={0,0};   
     uint16  p_wr;
     uint16  p_rd;
+    static  u32 systime     = 0;
+    static  u8  nocalatimes = 0; 
     
     for(i = 0;i< 2;i++)
     {
         /*******************************************************************************
-        * Description  : 更具脉冲所在位置，采集高低电平
+        * Description  : 根据脉冲所在位置，采集高低电平
                         高电平：上升沿，90%后采集；
                         低电平：下降沿，10%后采集；
                         在高、低电平均采集一次后（lockflg实现），才进行下组数据采集。
@@ -220,10 +251,14 @@ void    app_calc_ch_voltagepara(void)
            ||   ( p_wr < p_rd) &&  (p_wr + CH_VOLTAGE_BUF_SIZE > p_rd+10)           
             )  
         {
-            uint32  sum;
-            uint16  max,min;
-            uint8   tmp8;
-            uint16  tmp16;
+            uint32      sum;
+            uint16      max,min;
+            uint8       tmp8;
+            uint16      tmp16;
+            int32       voh,vol,vcc;  
+            
+            nocalatimes     = 0;                //
+            systime         = sCtrl.sys.time;
             
             /*******************************************************************************
             * Description  : 在10个数中，除去最大值、最小值，再取平均
@@ -245,7 +280,7 @@ void    app_calc_ch_voltagepara(void)
                 
                 sum += tmp16;
             }
-            sCtrl.ch.para[i].Vol = (sum - max - min)/8;
+            vol = (sum - max - min)/8;
                 
             //计算高电平
             tmp8 = 0;
@@ -263,7 +298,7 @@ void    app_calc_ch_voltagepara(void)
                 
                 sum += tmp16;
             }
-            sCtrl.ch.para[i].Voh = (sum - max - min)/8;
+            voh = (sum - max - min)/8;
             
             
             //计算供电电源
@@ -285,14 +320,37 @@ void    app_calc_ch_voltagepara(void)
                     sum += tmp16;
                 }
                 
-                sCtrl.ch.vcc_vol = (sum - max - min)/8;
+                 vcc = (sum - max - min)/8;
             }
+            
+            /**************************************************************
+            * Description  : 计算值修正
+            * Author       : 2018/5/30 星期三, by redmorningcn
+            */
+            sCtrl.ch.para[i].Vol = (vol * sCtrl.calitab.CaliBuf[i+1].line / CALI_LINE_BASE) + sCtrl.calitab.CaliBuf[i+1].Delta;
+            sCtrl.ch.para[i].Voh = (voh * sCtrl.calitab.CaliBuf[i+1].line / CALI_LINE_BASE) + sCtrl.calitab.CaliBuf[i+1].Delta;
+            sCtrl.ch.vcc_vol     = (vcc * sCtrl.calitab.VccVol.line / CALI_LINE_BASE)       + sCtrl.calitab.VccVol.Delta;
             
             /*******************************************************************************
             * Description  : 调整读指针
             * Author       : 2018/3/29 星期四, by redmorningcn
             *******************************************************************************/
             sCtrl.ch.test[i].p_rd_vol = (p_rd + tmp8) % CH_VOLTAGE_BUF_SIZE;
+        }
+    }
+    
+    /**************************************************************
+    * Description  : 如果长时间未进行采集信号VCC，
+    * Author       : 2018/5/30 星期三, by redmorningcn
+    */
+    if(sCtrl.sys.time  > systime + 1000){
+        systime = sCtrl.sys.time;
+        nocalatimes++;
+        
+        if(nocalatimes >20 ){
+            nocalatimes = 0;
+            int32 vcc = Get_ADC(ADC_Channel_10+2);      //采集电压
+            sCtrl.ch.vcc_vol     = (vcc * sCtrl.calitab.VccVol.line / CALI_LINE_BASE) + sCtrl.calitab.VccVol.Delta;
         }
     }
 }
@@ -318,8 +376,7 @@ void    app_ch_judge(void)
             if(sCtrl.ch.test[i].pulse_cnt > plusecnt[i])
             {
                 errcnt[i] = 0;
-                sCtrl.ch.para[i].status       &= ~(0x01);     //脉冲信号正常  
-                
+                sCtrl.ch.para[i].status.nopluse = 0;        //脉冲信号正常         
             }
             else
             {
@@ -331,7 +388,7 @@ void    app_ch_judge(void)
                     sCtrl.ch.para[i].period   = 0;
                     sCtrl.ch.para[i].raise    = 0;
                     sCtrl.ch.para[i].ratio    = 0;
-                    sCtrl.ch.para[i].status  |= 0x01;         //无脉冲信号
+                    sCtrl.ch.para[i].status.nopluse = 1;    //无脉冲信号
                     sCtrl.ch.para[i].Voh      = 0;
                     sCtrl.ch.para[i].Vol      = 0;
                     
@@ -339,7 +396,6 @@ void    app_ch_judge(void)
                         sCtrl.ch.ch1_2phase   = 0;
                         sCtrl.ch.vcc_vol      = 0;
                     }
-                    
                 }
             }
             plusecnt[i] = sCtrl.ch.test[i].pulse_cnt;

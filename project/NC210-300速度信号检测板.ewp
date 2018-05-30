@@ -1996,6 +1996,12 @@
         <name>$PROJ_DIR$\..\source\bsp\driver\bsp_dac.c</name>
       </file>
       <file>
+        <name>$PROJ_DIR$\..\source\bsp\driver\bsp_flash.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\bsp\driver\bsp_flash.h</name>
+      </file>
+      <file>
         <name>$PROJ_DIR$\..\source\bsp\driver\bsp_wave_detect.c</name>
       </file>
     </group>

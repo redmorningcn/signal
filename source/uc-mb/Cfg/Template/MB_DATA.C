@@ -83,7 +83,7 @@ CPU_BOOLEAN  MB_CoilRd (CPU_INT16U   coil,
     /***********************************************
     * 描述： 获取值
     */
-    if ( reg < sizeof(sCtrl.buf) / 2 ) {
+    if ( reg < sizeof(Unnctrl) / 2 ) {
         reg_val = preg[reg];
         *perr = MODBUS_ERR_NONE;
     } else {
@@ -153,7 +153,7 @@ void  MB_CoilWr (CPU_INT16U    coil,
     /***********************************************
     * 描述： 获取值
     */
-    if ( reg < sizeof(sCtrl.buf) / 2 ) {
+    if ( reg < sizeof(Unnctrl) / 2 ) {
         /***********************************************
         * 描述：
         */
@@ -366,14 +366,13 @@ CPU_INT16U  MB_HoldingRegRd (CPU_INT16U   reg,
     CPU_INT16U  reg_val;
     //CPU_SR      cpu_sr;
 
-
 //        
 //    CPU_INT16U *preg       = (CPU_INT16U *)& Ctrl.Para.buf2[0];
     CPU_INT16U *preg   	= (CPU_INT16U *)&sCtrl.buf[0];
     /***********************************************
     * 描述： 获取值
     */
-    if ( reg < sizeof(sCtrl.buf) / 2 ) {
+    if ( reg < sizeof(Unnctrl) / 2 ) {
         //CPU_CRITICAL_ENTER();
         reg_val = preg[reg];
         //CPU_CRITICAL_EXIT();
@@ -436,7 +435,7 @@ CPU_FP32  MB_HoldingRegRdFP (CPU_INT16U   reg,
     /***********************************************
     * 描述： 获取值
     */
-    if ( reg < sizeof(sCtrl.buf) / 4 ) {
+    if ( reg < sizeof(Unnctrl) / 4 ) {
         preg    += reg;
         //CPU_SR_ALLOC();
         //CPU_CRITICAL_ENTER();
@@ -500,11 +499,26 @@ void  MB_HoldingRegWr (CPU_INT16U   reg,
     /***********************************************
     * 描述： 在指定地址写入数据
     */
-    if ( reg < sizeof(sCtrl.buf) / 2 ) {
+    if ( reg < sizeof(Unnctrl) / 2 ) {
         preg    += reg;
         /***********************************************
-        * 描述： 写入测量模块校准参数
-        */    
+        * 描述： 写入测量模块校准参数（如果地址范围在校验区，写校验标志置位）
+        */   
+        u32 addr = ((u32)&sCtrl.calitab - (u32)&sCtrl);
+        if(reg > addr && reg < (addr + sizeof(sCtrl.calitab)))
+        {
+            sCtrl.sys.paraflg.califlg = 1;      //存校准参数
+        }
+        /**************************************************************
+        * Description  : 存sys参数
+        * Author       : 2018/5/30 星期三, by redmorningcn
+        */
+        addr = (u32)((u32)&sCtrl.sys - (u32)&sCtrl);
+        if(reg > addr && reg < (addr + sizeof(sCtrl.sys)))
+        {
+            sCtrl.sys.paraflg.sysflg = 1;      //存sys参数
+        }
+        
         //CPU_SR_ALLOC();
         //CPU_CRITICAL_ENTER();
         *preg       = reg_val;
@@ -573,7 +587,13 @@ void  MB_HoldingRegWrFP (CPU_INT16U   reg,
     /***********************************************
     * 描述： 获取值
     */
-    if ( reg < sizeof(sCtrl.buf) / 4 ) {
+    if ( reg < sizeof(Unnctrl) / 4 ) {
+        
+        /**************************************************************
+        * Description  : 存参数（定义全局）
+        * Author       : 2018/5/30 星期三, by redmorningcn
+        */
+
         preg    += reg;
         //CPU_SR_ALLOC();
         //CPU_CRITICAL_ENTER();
@@ -707,6 +727,7 @@ CPU_BOOLEAN NON_MBS_FCxx_Handler (MODBUS_CH  *pch)
 //    extern INT08U APP_CommRxDataDealCB(MODBUS_CH  *pch);
 //    
 //    return APP_CommRxDataDealCB(pch);
+    return 1;
 }
 #endif
 

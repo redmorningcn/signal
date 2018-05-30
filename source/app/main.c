@@ -6,6 +6,8 @@
 #include <app.h>
 #include <bsp.h>
 #include <bsp_dac.h>
+#include <bsp_flash.h>
+
 
 
 /*******************************************************************************
@@ -90,6 +92,66 @@ void    set_dac_task(void)
     }
 }
 
+/**************************************************************
+* Description  : 初始化系统参数
+* Author       : 2018/5/30 星期三, by redmorningcn
+*/
+void    InitCtrl(void)
+{
+    sCtrl.sys.paraflg.sysflg    = 0;        //不存系统参数（sys）
+    sCtrl.sys.paraflg.califlg   = 0;        //不存修正参数（cali）
+    
+    /**************************************************************
+    * Description  : 读取校准值
+    * Author       : 2018/5/30 星期三, by redmorningcn
+    */
+    BSP_FlashReadBytes(STORE_ADDR_CALI,
+                       (u8 *)&sCtrl.calitab,
+                       sizeof(sCtrl.calitab));
+    
+    for(u8  i = 0;i <sizeof(sCtrl.calitab)/sizeof(strCalibration);i++){
+        //修正线性度检查
+        if(     sCtrl.calitab.CaliBuf[i].line < CALI_LINE_MIN 
+            ||  sCtrl.calitab.CaliBuf[i].line > CALI_LINE_MAX
+            ){
+                sCtrl.calitab.CaliBuf[i].line   = CALI_LINE_BASE; //线性度超限，置默认值
+                sCtrl.calitab.CaliBuf[i].Delta  = CALI_DELTA_BASE;//修正偏差超限，置默认值
+
+            }
+        
+        //修正偏差检查
+        if(     sCtrl.calitab.CaliBuf[i].Delta < CALI_DELTA_MIN
+            ||  sCtrl.calitab.CaliBuf[i].Delta > CALI_DELTA_MAX
+            ){
+                sCtrl.calitab.CaliBuf[i].Delta = CALI_DELTA_BASE;//修正偏差超限，置默认值
+            }
+    }
+}
+
+/**************************************************************
+* Description  : 保存参数
+* Author       : 2018/5/30 星期三, by redmorningcn
+*/
+void    store_para(void)
+{
+    if(sCtrl.sys.paraflg.califlg == 1){
+        sCtrl.sys.paraflg.califlg = 0; 
+        
+        BSP_FlashWriteBytes(STORE_ADDR_CALI,
+                        (u8 *)&sCtrl.calitab,
+                        sizeof(sCtrl.calitab));
+    }
+    
+    if(sCtrl.sys.paraflg.sysflg == 1){
+        sCtrl.sys.paraflg.sysflg = 0;
+        
+        BSP_FlashWriteBytes(STORE_ADDR_SYS,
+                            (u8 *)&sCtrl.sys,
+                            sizeof(sCtrl.sys));
+    }
+}
+        
+    
 /*******************************************************************************
 * Description  : 闲置任务，时间不紧迫的工作在此运行
 * Author       : 2018/4/16 星期一, by redmorningcn
@@ -99,11 +161,13 @@ void    idle_task(void)
     static  uint32  tick;
     if(sCtrl.sys.time > tick+100 ||  sCtrl.sys.time < tick) //100ms
     {
-        tick = sCtrl.sys.time;                        //时间
+        tick = sCtrl.sys.time;                  //时间
         
         led_task();                             //指示灯控制
         
         set_dac_task();                         //设置参考电压
+        
+        store_para();                           //保存参数
     }
 }
 
@@ -143,6 +207,12 @@ void main (void)
     * Author       : 2018/4/13 星期五, by redmorningcn
     *******************************************************************************/
     BSP_dac_init();
+    
+    /**************************************************************
+    * Description  : 读已存修正计算参数
+    * Author       : 2018/5/29 星期二, by redmorningcn
+    */
+    InitCtrl();
     
     /*******************************************************************************
     * Description  : 串口通信初始化

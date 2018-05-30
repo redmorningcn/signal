@@ -40,11 +40,20 @@ extern "C" {
 __packed
 typedef struct  
 {
-    uint32  id;             //产品id       0
-    uint32  num;            //产品编号     4
-    uint8   buf[64];        //预留         8
-    uint32  cpu_freq;       //cpu频率      72
-    uint32  time;           //系统全局时间(系统时钟(1/72Mhz) *65536)=约1ms   76
+    uint32  id;             // 产品id       0
+    uint32  num;            // 产品编号     4
+    
+    union{
+        struct{
+            u8  sysflg      :1; // 存系统参数 
+            u8  califlg     :1; // 存校准参数
+            u8  rev         :6; // 预留
+        };
+        u8  flags;
+    }paraflg;
+    uint8   buf[63];        // 预留         8
+    uint32  cpu_freq;       // cpu频率      72
+    uint32  time;           // 系统全局时间(系统时钟(1/72Mhz) *65536)=约1ms   76
 }strSysPara;    
     
 
@@ -52,11 +61,12 @@ __packed
 typedef union _Unnctrl_ {
     struct{
         strSysPara          sys;        //公共参数
-        strCoupleChannel    ch;         //产品特有参数
+        strCoupleChannel    ch;         //产品特有参数    
+        strCaliTable        calitab;    //修正系数
         MODBUS_CH   	    *pch;       //modbus控制块
 
     };
-    uint16   buf[512];
+    uint16   buf[1024];
         
 }Unnctrl;
 
@@ -65,7 +75,32 @@ extern  Unnctrl sCtrl;
 
 /*******************************************************************************
  * TYPEDEFS
- */
+ */ 
+#define     STORE_ADDR_SYS      (0)                                     /* 存sys地址     */
+#define     STORE_ADDR_CALI     (STORE_ADDR_SYS + sizeof(strSysPara))   /* 存校验地址    */
+
+/**************************************************************
+* Description  : 校准额定值
+* Author       : 2018/5/30 星期三, by redmorningcn
+*/
+#define     CALI_LINE_BASE      (10000)         /*  线性度基准        */
+#define     CALI_LINE_MIN       (9500)          /*  线性度最小偏大-5% */
+#define     CALI_LINE_MAX       (10500)         /*  线性度最大偏大 5% */  
+#define     CALI_DELTA_BASE     (0)             /*  偏差基准          */      
+#define     CALI_DELTA_MIN      (-500)          /*  允许调整的偏差-0.5*/    
+#define     CALI_DELTA_MAX      (500)           /*  允许调整的偏差 0.5*/    
+     
+
+/**************************************************************
+* Description  : 丢脉冲判断依据
+* Author       : 2018/5/30 星期三, by redmorningcn
+*/
+#define     PERIOD_ERR_CALI     (1.5)           /* 周期错误系数。（前后偏差1.5周期）认为故障 */
+#define     PERIOD_ERR_CNT      (3)             /* 允许错误次数                             */
+
+#define     CIRCLE_PLUSE_NUM    (200)           /* 一圈脉冲常数（200或72）                  */
+
+
 
 /***********************************************
 * 描述： 软定时器外部引用声明

@@ -151,7 +151,7 @@ void TIM8_CC_IRQHandler(void)
 
 /*******************************************************************************
 * Description  : 全局时间累积。真实时间 time = strSys.time * 65536 + TIM_GetCounter  
-                              再乘以单周期时间。
+                              再乘以单周期时间。65536/72000000
 * Author       : 2018/3/13 星期二, by redmorningcn
 *******************************************************************************/
 void TIM8_OVER_IRQHandler(void)
@@ -159,7 +159,7 @@ void TIM8_OVER_IRQHandler(void)
 	if(TIM_GetITStatus(TIM8,TIM_IT_Update)!=RESET)  //计数器溢出中断
 	{
 		TIM_ClearITPendingBit(TIM8,TIM_IT_Update);  //清除中断标志
-        sCtrl.sys.time++;                                 //系统是时间累加
+        sCtrl.sys.time++;                           //系统是时间累加
 	}
 }
 

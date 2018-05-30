@@ -105,13 +105,50 @@ typedef struct
         uint16              ratio;                          //占空比，0.00-100.00%
         uint16              Vol;                            //低电平，0.00-30.00V
         uint16              Voh;                            //高电平，0.00-30.00V
-        uint16              status;                         //通道状态
+        
+        union{
+            struct{
+                u16         lose    :1  ;                   //丢脉冲
+                u16         nopluse :1  ;                   //无信号
+                u16         rec     :15 ;
+            };
+            u16             flags;
+        }status;                         //通道状态
     }para[2];
     
     uint32  ch1_2phase;                                     //相位差，0.00-360.00°
     uint16  vcc_vol;                                        //供电电压
     uint16  stand_vol;                                      //参考电压
 }strCoupleChannel;
+
+
+//calibration
+/**************************************************************
+* Description  : 校准参数
+* Author       : 2018/5/22 星期二, by redmorningcn
+*/
+typedef struct {
+    u32     line;       //修正线性度  
+    int16   Delta;      //修正偏差
+    int16   tmp;        //预留
+
+}strCalibration;
+
+
+/**************************************************************
+* Description  : 修正参数表
+* Author       : 2018/5/22 星期二, by redmorningcn
+*/
+typedef struct{
+    union   {
+        struct{
+            strCalibration  VccVol;         //电平
+            strCalibration  Ch1Vol;         //通道1电压
+            strCalibration  Ch2Vol;         //通道2电压
+        };
+        strCalibration      CaliBuf[20];
+    };
+}strCaliTable;
 
 
 /*******************************************************************************
