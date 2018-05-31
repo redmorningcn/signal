@@ -225,7 +225,7 @@ void main (void)
                         MODBUS_SLAVE,           // ... This is a MASTER
                         500,                    // ... 0 when a slave
                         MODBUS_MODE_RTU,        // ... Modbus Mode (_ASCII or _RTU)
-                        0,                      // ... Specify UART #2
+                        0,                      // ... Specify UART #1
                         57600,                  // ... Baud Rate
                         USART_WordLength_8b,    // ... Number of data bits 7 or 8
                         USART_Parity_No,        // ... Parity: _NONE, _ODD or _EVEN
