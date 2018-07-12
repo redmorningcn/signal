@@ -2161,6 +2161,12 @@
       <file>
         <name>$PROJ_DIR$\..\source\bsp\driver\bsp_wave_detect.c</name>
       </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\bsp\driver\bsp_wdt.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\bsp\driver\bsp_wdt.h</name>
+      </file>
     </group>
     <group>
       <name>user_b</name>

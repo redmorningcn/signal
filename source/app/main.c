@@ -7,6 +7,7 @@
 #include <bsp.h>
 #include <bsp_dac.h>
 #include <bsp_flash.h>
+#include <bsp_wdt.h>
 
 
 
@@ -41,7 +42,7 @@ void    led_task(void)
 
 //参考电压，单位mv
 #define     FULL_VOLTAGE            (3300)
-#define     STANDARD_VOLTAGE        (FULL_VOLTAGE/5)
+#define     STANDARD_VOLTAGE        (FULL_VOLTAGE/4)
 #define     MAX_HIG_VOLTAGE         (3000)
 #define     MAX_STANDARD_VOLTAGE    (1500)        
 
@@ -68,7 +69,7 @@ void    set_dac_task(void)
                 diffcnt++;
             }
             
-            if( diffcnt > 10 )                                      //连续5次，采集的高电平电压和设置电压
+            if( diffcnt > 10 )                                          //连续5次，采集的高电平电压和设置电压
             {
                 sCtrl.ch.stand_vol =((sum / diffcnt)*9)/10;
                 
@@ -78,7 +79,7 @@ void    set_dac_task(void)
                 }
                 else if(sCtrl.ch.stand_vol < STANDARD_VOLTAGE)
                 {
-                    sCtrl.ch.stand_vol  = STANDARD_VOLTAGE;               //0.66V
+                    sCtrl.ch.stand_vol  = STANDARD_VOLTAGE;               //0.8V
                 }
                 
                 bsp_set_dacvalue(sCtrl.ch.stand_vol);                     //重新设置比较值                      
@@ -89,6 +90,17 @@ void    set_dac_task(void)
             sum     = 0;
             diffcnt = 0;
         }
+    }else{                                                              // (如果没有信号，按照默认值设置)
+        if( sCtrl.ch.stand_vol > MAX_STANDARD_VOLTAGE  )                 //限定比较器的参考电压在1.5V和0.66V之间
+        {
+            sCtrl.ch.stand_vol   = MAX_STANDARD_VOLTAGE;                 //1.5v
+        }
+        else if(sCtrl.ch.stand_vol < STANDARD_VOLTAGE)
+        {
+            sCtrl.ch.stand_vol  = STANDARD_VOLTAGE;                      //0.8V
+        }
+        
+        bsp_set_dacvalue(sCtrl.ch.stand_vol);                           //重新设置比较值                      
     }
 }
 
@@ -180,7 +192,7 @@ void main (void)
 	/***********************************************
 	* 描述： 初始化滴答定时器，即初始化系统节拍时钟。
 	*/
-	sCtrl.sys.cpu_freq = BSP_CPU_ClkFreq();  //时钟频率               /* Determine SysTick reference freq.                    */
+	sCtrl.sys.cpu_freq = BSP_CPU_ClkFreq();  //时钟频率               /* Determine SysTick reference freq.              */
     
     /*******************************************************************************
     * Description  : 信号幅值及工作电源电压检测初始化化
@@ -233,6 +245,8 @@ void main (void)
                         MODBUS_WR_EN);          // ... Enable (_EN) or disable (_DIS) writes
 
     
+    BSP_WDT_Init(BSP_WDT_MODE_INT);             // 初始化看门狗
+    
     while(1)
     {
         /*******************************************************************************
@@ -264,6 +278,8 @@ void main (void)
         * Author       : 2018/5/7 星期一, by redmorningcn
         *******************************************************************************/
         mod_bus_rx_task();
+        
+        BSP_WDT_Rst();
     }
 }
 

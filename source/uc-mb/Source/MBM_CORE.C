@@ -1102,8 +1102,10 @@ CPU_INT16U  MBM_FC16_HoldingRegWrN   (MODBUS_CH   *pch,
     } else {
       while(ctr--) {
         temp            = *p_reg_tbl;
-       *ptx_data++      = LO_INT16U(temp);
+       //*ptx_data++      = LO_INT16U(temp);
+       //*ptx_data++      = HI_INT16U(temp);
        *ptx_data++      = HI_INT16U(temp);
+       *ptx_data++      = LO_INT16U(temp);
         p_reg_tbl++;
       }
     }

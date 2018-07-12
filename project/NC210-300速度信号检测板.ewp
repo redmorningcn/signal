@@ -623,7 +623,7 @@
         <option>
           <name>OOCOutputFormat</name>
           <version>3</version>
-          <state>0</state>
+          <state>3</state>
         </option>
         <option>
           <name>OCOutputOverride</name>
@@ -631,7 +631,7 @@
         </option>
         <option>
           <name>OOCOutputFile</name>
-          <state>NC210-300&#x901F;&#x5eA6;&#x4Fe1;&#x53F7;&#x68C0;&#x6D4B;&#x677F;.srec</state>
+          <state>NC210-300&#x901F;&#x5eA6;&#x4Fe1;&#x53F7;&#x68C0;&#x6D4B;&#x677F;.bin</state>
         </option>
         <option>
           <name>OOCCommandLineProducer</name>
@@ -639,7 +639,7 @@
         </option>
         <option>
           <name>OOCObjCopyEnable</name>
-          <state>0</state>
+          <state>1</state>
         </option>
       </data>
     </settings>
@@ -2003,6 +2003,12 @@
       </file>
       <file>
         <name>$PROJ_DIR$\..\source\bsp\driver\bsp_wave_detect.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\bsp\driver\bsp_wdt.c</name>
+      </file>
+      <file>
+        <name>$PROJ_DIR$\..\source\bsp\driver\bsp_wdt.h</name>
       </file>
     </group>
     <group>

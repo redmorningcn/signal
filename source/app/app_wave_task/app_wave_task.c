@@ -113,14 +113,27 @@ void    app_calc_ch_timepara(void)
             starttime   =   sCtrl.ch.test[i].time[p_read].hig_down_time  * 65536 
                         +   sCtrl.ch.test[i].time[p_read].hig_down_cnt  ;
             endtime     =   sCtrl.ch.test[i].time[p_read].low_down_time  * 65536 
-                        +   sCtrl.ch.test[i].time[p_read].low_down_cnt  ;            
+                        +   sCtrl.ch.test[i].time[p_read].low_down_cnt  ;     
+            
+            uint16      failtime; 
             if(starttime > endtime)             //防止翻转
             {
                 endtime += 65536;
             }
             else
             {
-                sCtrl.ch.para[i].fail = ( endtime - starttime)*1000*1000*100/ sCtrl.sys.cpu_freq;
+                failtime = ( endtime - starttime)*1000*1000*100/ sCtrl.sys.cpu_freq;
+                
+                if(failtime < 25 )  {               //补偿采样电路误差 180712 (减去固有误差)
+                    failtime = failtime / 5;
+                }else{
+                    failtime -= 25;
+                    
+                    if(failtime < 5)
+                        failtime = 5;
+                }
+                    
+                sCtrl.ch.para[i].fail = failtime;
             }
 
             /*******************************************************************************
@@ -321,6 +334,7 @@ void    app_calc_ch_voltagepara(void)
                 }
                 
                  vcc = (sum - max - min)/8;
+                 sCtrl.ch.vcc_vol     = (vcc * sCtrl.calitab.VccVol.line / CALI_LINE_BASE)       + sCtrl.calitab.VccVol.Delta;
             }
             
             /**************************************************************
@@ -329,7 +343,6 @@ void    app_calc_ch_voltagepara(void)
             */
             sCtrl.ch.para[i].Vol = (vol * sCtrl.calitab.CaliBuf[i+1].line / CALI_LINE_BASE) + sCtrl.calitab.CaliBuf[i+1].Delta;
             sCtrl.ch.para[i].Voh = (voh * sCtrl.calitab.CaliBuf[i+1].line / CALI_LINE_BASE) + sCtrl.calitab.CaliBuf[i+1].Delta;
-            sCtrl.ch.vcc_vol     = (vcc * sCtrl.calitab.VccVol.line / CALI_LINE_BASE)       + sCtrl.calitab.VccVol.Delta;
             
             /*******************************************************************************
             * Description  : 调整读指针

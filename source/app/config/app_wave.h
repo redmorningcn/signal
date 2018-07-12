@@ -110,7 +110,7 @@ typedef struct
             struct{
                 u16         lose    :1  ;                   //丢脉冲
                 u16         nopluse :1  ;                   //无信号
-                u16         rec     :15 ;
+                u16         rec     :14 ;
             };
             u16             flags;
         }status;                         //通道状态
@@ -148,6 +148,7 @@ typedef struct{
         };
         strCalibration      CaliBuf[20];
     };
+    
 }strCaliTable;
 
 
