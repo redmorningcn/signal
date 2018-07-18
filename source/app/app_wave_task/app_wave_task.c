@@ -8,6 +8,7 @@
 * INCLUDES
 */
 #include <app_wave_task.h>
+#include <Algorithm.h>
 
 
 /*******************************************************************************
@@ -26,7 +27,6 @@ void    app_calc_ch_timepara(void)
     uint64  ratiotime;
     
     uint8   i;
-    
         
     for(i = 0;i< 2;i++)
     {
@@ -47,12 +47,12 @@ void    app_calc_ch_timepara(void)
             * Author       : 2018/3/13 星期二, by redmorningcn
             *******************************************************************************/
             p_read      =   sCtrl.ch.test[i].p_read;
-            starttime   =   sCtrl.ch.test[i].time[p_read].low_up_time  * 65536 
-                        +   sCtrl.ch.test[i].time[p_read].low_up_cnt  ;
+            starttime   =   sCtrl.ch.test[i].time[p_read].hig_up_time  * 65536 
+                        +   sCtrl.ch.test[i].time[p_read].hig_up_cnt  ;
             
             p_read      =   (sCtrl.ch.test[i].p_read + 1) % CH_TIMEPARA_BUF_SIZE;   //防止越界
-            endtime     =   sCtrl.ch.test[i].time[p_read].low_up_time  * 65536 
-                        +   sCtrl.ch.test[i].time[p_read].low_up_cnt  ;
+            endtime     =   sCtrl.ch.test[i].time[p_read].hig_up_time  * 65536 
+                        +   sCtrl.ch.test[i].time[p_read].hig_up_cnt  ;
             
             if(starttime > endtime)                                                 //防止翻转
             {
@@ -69,15 +69,27 @@ void    app_calc_ch_timepara(void)
                     sCtrl.ch.para[i].freq += 1;
             }
             
+            /**************************************************************
+            * Description  : 如果频率为0，后面计算，直接赋值0
+            * Author       : 2018/7/18 星期三, by redmorningcn
+            */
+            if(sCtrl.ch.para[i].freq    == 0){
+                sCtrl.ch.para[i].ratio  = 0;
+                sCtrl.ch.para[i].raise  = 0;
+                sCtrl.ch.para[i].fail   = 0; 
+                sCtrl.ch.ch1_2phase     = 0;
+                return;
+            }
+            
             /*******************************************************************************
             * Description  : 计算占空比(xx.xx%)，( hig_down -  low_up ) / period
             * Author       : 2018/3/13 星期二, by redmorningcn
             *******************************************************************************/
             p_read      =   sCtrl.ch.test[i].p_read;
-            starttime   =   sCtrl.ch.test[i].time[p_read].low_up_time  * 65536 
-                        +   sCtrl.ch.test[i].time[p_read].low_up_cnt  ;
-            endtime     =   sCtrl.ch.test[i].time[p_read].low_down_time  * 65536 
-                        +   sCtrl.ch.test[i].time[p_read].low_down_cnt  ;            
+            starttime   =   sCtrl.ch.test[i].time[p_read].hig_up_time  * 65536 
+                        +   sCtrl.ch.test[i].time[p_read].hig_up_cnt  ;
+            endtime     =   sCtrl.ch.test[i].time[p_read].hig_down_time  * 65536 
+                        +   sCtrl.ch.test[i].time[p_read].hig_down_cnt  ;            
             if(starttime > endtime)             //防止翻转
             {
                 endtime += 65536;
@@ -103,6 +115,9 @@ void    app_calc_ch_timepara(void)
             else
             {
                 sCtrl.ch.para[i].raise = ( endtime - starttime) *1000*1000*100 / sCtrl.sys.cpu_freq;
+                
+                if(sCtrl.ch.para[i].raise  > 500)
+                    sCtrl.ch.para[i].raise  = 500;
             }
             
             /*******************************************************************************
@@ -144,24 +159,27 @@ void    app_calc_ch_timepara(void)
             {
                 uint16      ptmp[2];
                 
-                ptmp[0]    = sCtrl.ch.test[0].p_write;
-                ptmp[1]    = sCtrl.ch.test[1].p_write;
+                if(sCtrl.ch.para[1].freq  && sCtrl.ch.para[0].freq ){
                 
-                p_read      =   (ptmp[0] + CH_TIMEPARA_BUF_SIZE -1)%CH_TIMEPARA_BUF_SIZE ;
-                starttime   =   sCtrl.ch.test[0].time[p_read].low_up_time  * 65536 
-                            +   sCtrl.ch.test[0].time[p_read].low_up_cnt  ;
-                
-                p_read      =   (ptmp[1] + CH_TIMEPARA_BUF_SIZE -1)%CH_TIMEPARA_BUF_SIZE ;
+                    ptmp[0]    = sCtrl.ch.test[0].p_write;
+                    ptmp[1]    = sCtrl.ch.test[1].p_write;
+                    
+                    p_read      =   (ptmp[0] + CH_TIMEPARA_BUF_SIZE -1)%CH_TIMEPARA_BUF_SIZE ;
+                    starttime   =   sCtrl.ch.test[0].time[p_read].low_up_time  * 65536 
+                                +   sCtrl.ch.test[0].time[p_read].low_up_cnt  ;
+                    
+                    p_read      =   (ptmp[1] + CH_TIMEPARA_BUF_SIZE -1)%CH_TIMEPARA_BUF_SIZE ;
 
-                endtime     =   sCtrl.ch.test[1].time[p_read].low_up_time  * 65536 
-                            +   sCtrl.ch.test[1].time[p_read].low_up_cnt  ;            
-                if(starttime > endtime)             //防止翻转 (用最近的两信号进行计算)
-                {
-                    endtime += periodtime;          //加一周期时间
+                    endtime     =   sCtrl.ch.test[1].time[p_read].low_up_time  * 65536 
+                                +   sCtrl.ch.test[1].time[p_read].low_up_cnt  ;            
+                    if(starttime > endtime)             //防止翻转 (用最近的两信号进行计算)
+                    {
+                        endtime += periodtime;          //加一周期时间
+                    }
+                    
+                    //   phase/360 = difftime/peirod
+                    sCtrl.ch.ch1_2phase = 360*(endtime - starttime)*100 / periodtime; 
                 }
-                
-                //   phase/360 = difftime/peirod
-                sCtrl.ch.ch1_2phase = 360*(endtime - starttime)*100 / periodtime; 
             }
 
             /**************************************************************
@@ -201,19 +219,21 @@ void    app_calc_ch_timepara(void)
     }
 }
 
-
+#define     CALC_NUM_VOL  (10)
 /*******************************************************************************
 * Description  : 取信号电平检测值
 * Author       : 2018/3/29 星期四, by redmorningcn
 *******************************************************************************/
 void    app_calc_ch_voltagepara(void)
 {
-    uint8   i;
+    uint8    i;
     static  uint8   lockflg[2]={0,0};   
-    uint16  p_wr;
-    uint16  p_rd;
+    uint16   p_wr;
+    uint16   p_rd;
     static  u32 systime     = 0;
     static  u8  nocalatimes = 0; 
+    uint8    calcnum         = CALC_NUM_VOL;    //滤波常数
+    uint8    divisor         = 3;
     
     for(i = 0;i< 2;i++)
     {
@@ -260,14 +280,10 @@ void    app_calc_ch_voltagepara(void)
         p_wr = sCtrl.ch.test[i].p_wr_vol;
         p_rd = sCtrl.ch.test[i].p_rd_vol;
 
-        if(     ( p_wr > p_rd) &&  (p_wr > p_rd+10)           
-           ||   ( p_wr < p_rd) &&  (p_wr + CH_VOLTAGE_BUF_SIZE > p_rd+10)           
+        if(     ( p_wr > p_rd) &&  (p_wr > p_rd+ calcnum)           
+           ||   ( p_wr < p_rd) &&  (p_wr + CH_VOLTAGE_BUF_SIZE > p_rd+calcnum)           
             )  
         {
-            uint32      sum;
-            uint16      max,min;
-            uint8       tmp8;
-            uint16      tmp16;
             int32       voh,vol,vcc;  
             
             nocalatimes     = 0;                //
@@ -278,63 +294,31 @@ void    app_calc_ch_voltagepara(void)
             * Author       : 2018/3/29 星期四, by redmorningcn
             *******************************************************************************/
             //计算低电平
-            tmp8 = 0;
-            sum  = 0;
-            max  = sCtrl.ch.test[i].voltage[p_rd].ch_low_voltage;
-            min  = max;
-            for(tmp8 = 0;tmp8< 10;tmp8++)
-            {
-                tmp16 = sCtrl.ch.test[i].voltage[(p_rd + tmp8)%CH_VOLTAGE_BUF_SIZE].ch_low_voltage;
-                if(tmp16 > max)
-                    max = tmp16;
-                
-                if(tmp16 < min)
-                    min = tmp16;
-                
-                sum += tmp16;
+            u16   buftmp[CALC_NUM_VOL];
+            
+            for(u8 j=0;j < calcnum;j++){
+                buftmp[j] = sCtrl.ch.test[i].voltage[(p_rd + j)%CH_VOLTAGE_BUF_SIZE].ch_low_voltage;
             }
-            vol = (sum - max - min)/8;
+            vol = App_GetFilterValue(buftmp, buftmp, calcnum, calcnum/divisor, 0);
+            
                 
             //计算高电平
-            tmp8 = 0;
-            sum  = 0;
-            max  = sCtrl.ch.test[i].voltage[p_rd].ch_hig_voltage;
-            min  = max;
-            for(tmp8 = 0;tmp8< 10;tmp8++)
-            {
-                tmp16 = sCtrl.ch.test[i].voltage[(p_rd + tmp8)%CH_VOLTAGE_BUF_SIZE].ch_hig_voltage;
-                if(tmp16 > max)
-                    max = tmp16;
-                
-                if(tmp16 < min)
-                    min = tmp16;
-                
-                sum += tmp16;
+            for(u8 j=0;j < 10;j++){
+                buftmp[j] = sCtrl.ch.test[i].voltage[(p_rd + j)%CH_VOLTAGE_BUF_SIZE].ch_hig_voltage;
             }
-            voh = (sum - max - min)/8;
+            voh = App_GetFilterValue(buftmp, buftmp, calcnum, calcnum/divisor, 0);
             
-            
+
             //计算供电电源
             if(i == 1)
             {
-                tmp8 = 0;
-                sum  = 0;
-                max  = sCtrl.ch.test[i].voltage[p_rd].vcc_hig_voltage;
-                min  = max;
-                for(tmp8 = 0;tmp8< 10;tmp8++)
-                {
-                    tmp16 = sCtrl.ch.test[i].voltage[(p_rd + tmp8)%CH_VOLTAGE_BUF_SIZE].vcc_hig_voltage;
-                    if(tmp16 > max)
-                        max = tmp16;
-                    
-                    if(tmp16 < min)
-                        min = tmp16;
-                    
-                    sum += tmp16;
+                //计算高电平
+                for(u8 j=0;j < 10;j++){
+                    buftmp[j] = sCtrl.ch.test[i].voltage[(p_rd + j)%CH_VOLTAGE_BUF_SIZE].vcc_hig_voltage;
                 }
+                vcc = App_GetFilterValue(buftmp, buftmp, calcnum, calcnum/divisor, 0);
                 
-                 vcc = (sum - max - min)/8;
-                 sCtrl.ch.vcc_vol     = (vcc * sCtrl.calitab.VccVol.line / CALI_LINE_BASE)       + sCtrl.calitab.VccVol.Delta;
+                sCtrl.ch.vcc_vol     = (vcc * sCtrl.calitab.VccVol.line / CALI_LINE_BASE)       + sCtrl.calitab.VccVol.Delta;
             }
             
             /**************************************************************
@@ -348,7 +332,7 @@ void    app_calc_ch_voltagepara(void)
             * Description  : 调整读指针
             * Author       : 2018/3/29 星期四, by redmorningcn
             *******************************************************************************/
-            sCtrl.ch.test[i].p_rd_vol = (p_rd + tmp8) % CH_VOLTAGE_BUF_SIZE;
+            sCtrl.ch.test[i].p_rd_vol = (p_rd + calcnum) % CH_VOLTAGE_BUF_SIZE;
         }
     }
     
@@ -376,42 +360,47 @@ void    app_calc_ch_voltagepara(void)
 void    app_ch_judge(void)
 {
     static  uint32  tick;
-    static  uint32  plusecnt[2];
     static  uint32  errcnt[2];
-    uint8   i;
-    
-    if(sCtrl.sys.time > tick + 300 || sCtrl.sys.time < tick)       //300ms判断一次
+    uint8    i;
+    static  int pluse[2];
+        
+    if(sCtrl.sys.time > tick + 300 || sCtrl.sys.time < tick)    //300ms判断一次
     {
         tick = sCtrl.sys.time;
             
+        /**************************************************************
+        * Description  : 无信号判断
+        * Author       : 2018/7/18 星期三, by redmorningcn
+        */
         for(i = 0; i < 2;i++)
         {
-            if(sCtrl.ch.test[i].pulse_cnt > plusecnt[i])
+            if(pluse[i] !=  sCtrl.ch.test[i].pulse_cnt)
             {
                 errcnt[i] = 0;
-                sCtrl.ch.para[i].status.nopluse = 0;        //脉冲信号正常         
+                
+                sCtrl.ch.para[i].status.nopluse = 0;            //有脉冲信号        
             }
             else
-            {
-                errcnt[i]++;
-                if(errcnt[i] > 2)                           //异常，处理(置标识位，数据清零，无脉冲信号)
-                {
-                    sCtrl.ch.para[i].fail     = 0;
-                    sCtrl.ch.para[i].freq     = 0;
-                    sCtrl.ch.para[i].period   = 0;
-                    sCtrl.ch.para[i].raise    = 0;
-                    sCtrl.ch.para[i].ratio    = 0;
-                    sCtrl.ch.para[i].status.nopluse = 1;    //无脉冲信号
-                    sCtrl.ch.para[i].Voh      = 0;
-                    sCtrl.ch.para[i].Vol      = 0;
+            {   
+                if(sCtrl.ch.para[i].status.nopluse == 0){       //有信號
+                    errcnt[i]++;
                     
-                    if(i == 1){
+                    if(errcnt[i] > 2)                           //异常，处理(置标识位，数据清零，无脉冲信号)
+                    {
+                        sCtrl.ch.para[i].fail     = 0;
+                        sCtrl.ch.para[i].freq     = 0;
+                        sCtrl.ch.para[i].period   = 0;
+                        sCtrl.ch.para[i].raise    = 0;
+                        sCtrl.ch.para[i].ratio    = 0;
+                        sCtrl.ch.para[i].status.nopluse = 1;    //无脉冲信号
+                        sCtrl.ch.para[i].Voh      = 0;
+                        sCtrl.ch.para[i].Vol      = 0;
+                        
                         sCtrl.ch.ch1_2phase   = 0;
-                        sCtrl.ch.vcc_vol      = 0;
                     }
                 }
             }
-            plusecnt[i] = sCtrl.ch.test[i].pulse_cnt;
+            pluse[i] = sCtrl.ch.test[i].pulse_cnt;
         }
     }
 }

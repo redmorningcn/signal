@@ -52,6 +52,8 @@ void TIM8_CC_IRQHandler(void)
             sCtrl.ch.test[0].time[sCtrl.ch.test[0].p_write].hig_down_time   = time;     
             sCtrl.ch.test[0].time[sCtrl.ch.test[0].p_write].hig_down_cnt    = cnt;   
             
+            sCtrl.ch.test[0].pulse_cnt++;                             //周期结束放置在后面
+
             sCtrl.ch.test[0].pluse_status = CH_FALL_90_STATUS;       //下降沿，90%
         }
         
@@ -78,7 +80,6 @@ void TIM8_CC_IRQHandler(void)
             sCtrl.ch.test[0].time[sCtrl.ch.test[0].p_write].low_down_time    =  time;     
             sCtrl.ch.test[0].time[sCtrl.ch.test[0].p_write].low_down_cnt     =  cnt; 
             
-            sCtrl.ch.test[0].pulse_cnt++;                             //周期结束放置在后面
             sCtrl.ch.test[0].p_write           =      sCtrl.ch.test[0].pulse_cnt 
                 % CH_TIMEPARA_BUF_SIZE;
             
@@ -110,6 +111,8 @@ void TIM8_CC_IRQHandler(void)
             sCtrl.ch.test[1].time[sCtrl.ch.test[1].p_write].hig_down_time   = time;     
             sCtrl.ch.test[1].time[sCtrl.ch.test[1].p_write].hig_down_cnt    = cnt; 
             
+            sCtrl.ch.test[1].pulse_cnt++;                             //周期结束放置在后面
+
             sCtrl.ch.test[1].pluse_status = CH_FALL_90_STATUS;       //下降沿，90%
         }
         
@@ -137,7 +140,6 @@ void TIM8_CC_IRQHandler(void)
             sCtrl.ch.test[1].time[sCtrl.ch.test[1].p_write].low_down_cnt     =  cnt;  
             
             
-            sCtrl.ch.test[1].pulse_cnt++;                             //周期结束放置在后面
             sCtrl.ch.test[1].p_write             =        sCtrl.ch.test[1].pulse_cnt 
                                                     % CH_TIMEPARA_BUF_SIZE;
             
@@ -249,6 +251,18 @@ void Timer8_Configuration(void)
 	TIM_ICInitStruct.TIM_ICFilter = 0x00;//输入不滤波
 	TIM_ICInit(TIM8,&TIM_ICInitStruct);//初始化TIM8
 	
+    /**************************************************************
+    * Description  : 设置中断优先级
+    * Author       : 2018/7/17 星期二, by redmorningcn
+    */
+    NVIC_InitTypeDef NVIC_InitStructure; 
+    NVIC_InitStructure.NVIC_IRQChannel = TIM8_CC_IRQn;  //
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority=0 ;// 抢占优先级为0 
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;      // 子优先级位0 
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;         //IRQ通道使能
+
+    NVIC_Init(&NVIC_InitStructure);                         //根据上面指定的参数初始化NVIC寄存器    
+    
 	TIM_ITConfig(TIM8,TIM_IT_Update|TIM_IT_CC1|TIM_IT_CC2|TIM_IT_CC3|TIM_IT_CC4,ENABLE);//不允许更新中断 CC1IE捕获中断
 	
 	BSP_IntVectSet(TIM8_CC_IRQn, TIM8_CC_IRQHandler);

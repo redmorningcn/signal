@@ -61,7 +61,7 @@ void    set_dac_task(void)
     for(i = 0;i< 2;i++)
     if( sCtrl.ch.para[i].freq )                                           //通道0、或通道1有速度信号
     {
-        if(fabs(sCtrl.ch.stand_vol -  sCtrl.ch.para[i].Voh * 0.9) > (FULL_VOLTAGE/100)*5 )    //电压偏差小于10% ；
+        if(fabs(sCtrl.ch.stand_vol -  sCtrl.ch.para[i].Voh * 0.9) > (FULL_VOLTAGE/100)*2 )    //电压偏差小于10% ；
         {
             if(sCtrl.ch.para[i].Voh < MAX_HIG_VOLTAGE)                    //高电平最高3V
             {
@@ -69,7 +69,7 @@ void    set_dac_task(void)
                 diffcnt++;
             }
             
-            if( diffcnt > 10 )                                          //连续5次，采集的高电平电压和设置电压
+            if( diffcnt > 10 )                                              //连续5次，采集的高电平电压和设置电压
             {
                 sCtrl.ch.stand_vol =((sum / diffcnt)*9)/10;
                 
@@ -91,9 +91,9 @@ void    set_dac_task(void)
             diffcnt = 0;
         }
     }else{                                                              // (如果没有信号，按照默认值设置)
-        if( sCtrl.ch.stand_vol > MAX_STANDARD_VOLTAGE  )                 //限定比较器的参考电压在1.5V和0.66V之间
+        if( sCtrl.ch.stand_vol > MAX_STANDARD_VOLTAGE  )                //限定比较器的参考电压在1.5V和0.66V之间
         {
-            sCtrl.ch.stand_vol   = MAX_STANDARD_VOLTAGE;                 //1.5v
+            sCtrl.ch.stand_vol  = MAX_STANDARD_VOLTAGE;                 //1.5v
         }
         else if(sCtrl.ch.stand_vol < STANDARD_VOLTAGE)
         {
@@ -246,7 +246,7 @@ void main (void)
 
     
     BSP_WDT_Init(BSP_WDT_MODE_INT);             // 初始化看门狗
-    
+                                  
     while(1)
     {
         /*******************************************************************************
@@ -274,10 +274,22 @@ void main (void)
         idle_task();
         
         /*******************************************************************************
+        * Description  : 计算速度通道的电压参数
+        * Author       : 2018/4/13 星期五, by redmorningcn
+        *******************************************************************************/
+        app_calc_ch_voltagepara();
+        
+        /*******************************************************************************
         * Description  : 通讯任务
         * Author       : 2018/5/7 星期一, by redmorningcn
         *******************************************************************************/
         mod_bus_rx_task();
+        
+        /*******************************************************************************
+        * Description  : 计算速度通道的电压参数
+        * Author       : 2018/4/13 星期五, by redmorningcn
+        *******************************************************************************/
+        app_calc_ch_voltagepara();
         
         BSP_WDT_Rst();
     }

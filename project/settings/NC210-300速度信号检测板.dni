@@ -9,7 +9,7 @@ TriggerName=main
 LimitSize=0
 ByteLimit=50
 [DebugChecksum]
-Checksum=320874385
+Checksum=1003967022
 [CodeCoverage]
 Enabled=_ 0
 [Exceptions]
@@ -109,12 +109,12 @@ SumSortOrder=0
 [Disassemble mode]
 mode=0
 [Breakpoints2]
-Bp0=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\source\uc-mb\Cfg\Template\MB_DATA.C}.82.17" 0 0 1 "" 0 "" 0
+Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\source\uc-mb\Cfg\Template\MB_DATA.C}.82.17" 0 0 1 "" 0 "" 0
 Bp1=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\source\uc-mb\Ports\STM32\STM32F103\IAR\MB_BSP.C}.576.5" 0 0 1 "" 0 "" 0
 Bp2=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\source\uc-mb\Ports\STM32\STM32F103\IAR\MB_BSP.C}.584.5" 0 0 1 "" 0 "" 0
 Bp3=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\source\uc-mb\Ports\STM32\STM32F103\IAR\MB_BSP.C}.592.5" 0 0 1 "" 0 "" 0
-Bp4=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\source\uc-mb\Cfg\Template\MB_DATA.C}.497.17" 0 0 1 "" 0 "" 0
-Bp5=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\source\app\main.c}.248.5" 0 0 1 "" 0 "" 0
+Bp4=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\source\uc-mb\Cfg\Template\MB_DATA.C}.497.17" 0 0 1 "" 0 "" 0
+Bp5=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\source\app\main.c}.85.17" 0 0 1 "" 0 "" 0
 Count=6
 [Log file]
 LoggingEnabled=_ 0

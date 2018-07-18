@@ -35,7 +35,28 @@
 #define CH_FALL_10_STATUS       0x08
 
 
-
+/*******************************************************************************
+* Description  : 通道具体指标
+* Author       : 2018/3/14 星期三, by redmorningcn
+*******************************************************************************/
+typedef struct  _strsignalchannelpara{
+    uint32              period;                         //周期，  0.00-2000000.00us （0.5Hz）
+    uint32              freq;                           //频率，  0-100000hz              
+    uint16              raise;                          //上升沿，0.00-50.00us
+    uint16              fail;                           //下降沿，0.00-50.00us
+    uint16              ratio;                          //占空比，0.00-100.00%
+    uint16              Vol;                            //低电平，0.00-30.00V
+    uint16              Voh;                            //高电平，0.00-30.00V
+    
+    union{
+        struct{
+            u16         lose    :1  ;                   //丢脉冲
+            u16         nopluse :1  ;                   //无信号
+            u16         rec     :14 ;
+        };
+        u16             flags;
+    }status;                         //通道状态
+}strsignalchannelpara;
 
 /*******************************************************************************
  * TYPEDEFS
@@ -97,24 +118,7 @@ typedef struct
     * Description  : 通道具体指标
     * Author       : 2018/3/14 星期三, by redmorningcn
     *******************************************************************************/
-    struct _strsignalchannelpara_ {
-        uint32              period;                         //周期，  0.00-2000000.00us （0.5Hz）
-        uint32              freq;                           //频率，  0-100000hz              
-        uint16              raise;                          //上升沿，0.00-50.00us
-        uint16              fail;                           //下降沿，0.00-50.00us
-        uint16              ratio;                          //占空比，0.00-100.00%
-        uint16              Vol;                            //低电平，0.00-30.00V
-        uint16              Voh;                            //高电平，0.00-30.00V
-        
-        union{
-            struct{
-                u16         lose    :1  ;                   //丢脉冲
-                u16         nopluse :1  ;                   //无信号
-                u16         rec     :14 ;
-            };
-            u16             flags;
-        }status;                         //通道状态
-    }para[2];
+    strsignalchannelpara    para[2];
     
     uint32  ch1_2phase;                                     //相位差，0.00-360.00°
     uint16  vcc_vol;                                        //供电电压

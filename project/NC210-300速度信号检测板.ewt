@@ -2124,6 +2124,12 @@
       </file>
     </group>
     <file>
+      <name>$PROJ_DIR$\..\source\app\user\Algorithm.c</name>
+    </file>
+    <file>
+      <name>$PROJ_DIR$\..\source\app\user\Algorithm.h</name>
+    </file>
+    <file>
       <name>$PROJ_DIR$\..\source\app\app_wave_task\app_wave_task.c</name>
     </file>
     <file>
