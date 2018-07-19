@@ -21,7 +21,7 @@ void    led_task(void)
     
     blinkcnt++;
     
-    if(sCtrl.ch.para[0].period == 0 && sCtrl.ch.para[1].period  == 0)   //闪快慢控制   
+    if(Ctrl.ch.para[0].period == 0 && Ctrl.ch.para[1].period  == 0)   //闪快慢控制   
     {
         blinkcnt %= 20;                                     //所有通道无信号，慢闪  
     }
@@ -45,7 +45,7 @@ void    led_task(void)
 #define     STANDARD_VOLTAGE        (FULL_VOLTAGE/4)
 #define     MAX_HIG_VOLTAGE         (3000)
 #define     MAX_STANDARD_VOLTAGE    (1500)        
-
+#define     REF_VOLTAGE_RATIO       (0.80)
 /*******************************************************************************
 * Description  : 设置参考电压，定期调用（100ms）
                 参考电压为高电平的0.09，（取10%电压的0.9倍），高电平采样点在10%位置
@@ -59,30 +59,32 @@ void    set_dac_task(void)
     
     uint8   i;
     for(i = 0;i< 2;i++)
-    if( sCtrl.ch.para[i].freq )                                           //通道0、或通道1有速度信号
+    if( Ctrl.ch.para[i].freq )                                           //通道0、或通道1有速度信号
     {
-        if(fabs(sCtrl.ch.stand_vol -  sCtrl.ch.para[i].Voh * 0.9) > (FULL_VOLTAGE/100)*2 )    //电压偏差小于10% ；
+        if(fabs(Ctrl.ch.stand_vol -  Ctrl.ch.para[i].Voh * REF_VOLTAGE_RATIO) > (FULL_VOLTAGE/100)*2 )    //电压偏差小于10% ；
         {
-            if(sCtrl.ch.para[i].Voh < MAX_HIG_VOLTAGE)                    //高电平最高3V
+            if(Ctrl.ch.para[i].Voh < MAX_HIG_VOLTAGE)                    //高电平最高3V
             {
-                sum += sCtrl.ch.para[i].Voh;
+                sum += Ctrl.ch.para[i].Voh;
                 diffcnt++;
             }
             
             if( diffcnt > 10 )                                              //连续5次，采集的高电平电压和设置电压
             {
-                sCtrl.ch.stand_vol =((sum / diffcnt)*9)/10;
+                Ctrl.ch.stand_vol =(u16)((sum / diffcnt)*REF_VOLTAGE_RATIO)/10;
                 
-                if( sCtrl.ch.stand_vol > MAX_STANDARD_VOLTAGE  )          //限定比较器的参考电压在1.5V和0.66V之间
+                if( Ctrl.ch.stand_vol > MAX_STANDARD_VOLTAGE  )          //限定比较器的参考电压在1.5V和0.66V之间
                 {
-                    sCtrl.ch.stand_vol   = MAX_STANDARD_VOLTAGE;          //1.5v
+                    Ctrl.ch.stand_vol   = MAX_STANDARD_VOLTAGE;          //1.5v
                 }
-                else if(sCtrl.ch.stand_vol < STANDARD_VOLTAGE)
+                else if(Ctrl.ch.stand_vol < STANDARD_VOLTAGE)
                 {
-                    sCtrl.ch.stand_vol  = STANDARD_VOLTAGE;               //0.8V
+                    Ctrl.ch.stand_vol  = STANDARD_VOLTAGE;               //0.8V
                 }
                 
-                bsp_set_dacvalue(sCtrl.ch.stand_vol);                     //重新设置比较值                      
+                bsp_set_dacvalue(Ctrl.ch.stand_vol);                     //重新设置比较值
+                
+                return;
             }
         }
         else
@@ -90,17 +92,21 @@ void    set_dac_task(void)
             sum     = 0;
             diffcnt = 0;
         }
-    }else{                                                              // (如果没有信号，按照默认值设置)
-        if( sCtrl.ch.stand_vol > MAX_STANDARD_VOLTAGE  )                //限定比较器的参考电压在1.5V和0.66V之间
-        {
-            sCtrl.ch.stand_vol  = MAX_STANDARD_VOLTAGE;                 //1.5v
-        }
-        else if(sCtrl.ch.stand_vol < STANDARD_VOLTAGE)
-        {
-            sCtrl.ch.stand_vol  = STANDARD_VOLTAGE;                      //0.8V
-        }
+    }else{
+                                                              // (如果没有信号，按照默认值设置)
+        if(i==1){
         
-        bsp_set_dacvalue(sCtrl.ch.stand_vol);                           //重新设置比较值                      
+            if( Ctrl.ch.stand_vol > MAX_STANDARD_VOLTAGE  )                //限定比较器的参考电压在1.5V和0.66V之间
+            {
+                Ctrl.ch.stand_vol  = MAX_STANDARD_VOLTAGE;                 //1.5v
+            }
+            else if(Ctrl.ch.stand_vol < STANDARD_VOLTAGE)
+            {
+                Ctrl.ch.stand_vol  = STANDARD_VOLTAGE;                      //0.8V
+            }
+            
+            bsp_set_dacvalue(Ctrl.ch.stand_vol);                           //重新设置比较值  
+        }
     }
 }
 
@@ -110,34 +116,52 @@ void    set_dac_task(void)
 */
 void    InitCtrl(void)
 {
-    sCtrl.sys.paraflg.sysflg    = 0;        //不存系统参数（sys）
-    sCtrl.sys.paraflg.califlg   = 0;        //不存修正参数（cali）
-    
     /**************************************************************
     * Description  : 读取校准值
     * Author       : 2018/5/30 星期三, by redmorningcn
     */
     BSP_FlashReadBytes(STORE_ADDR_CALI,
-                       (u8 *)&sCtrl.calitab,
-                       sizeof(sCtrl.calitab));
+                       (u8 *)&Ctrl.calitab,
+                       sizeof(Ctrl.calitab));
     
-    for(u8  i = 0;i <sizeof(sCtrl.calitab)/sizeof(strCalibration);i++){
+    for(u8  i = 0;i <sizeof(Ctrl.calitab)/sizeof(strCalibration);i++){
         //修正线性度检查
-        if(     sCtrl.calitab.CaliBuf[i].line < CALI_LINE_MIN 
-            ||  sCtrl.calitab.CaliBuf[i].line > CALI_LINE_MAX
+        if(     Ctrl.calitab.CaliBuf[i].line < CALI_LINE_MIN 
+            ||  Ctrl.calitab.CaliBuf[i].line > CALI_LINE_MAX
             ){
-                sCtrl.calitab.CaliBuf[i].line   = CALI_LINE_BASE; //线性度超限，置默认值
-                sCtrl.calitab.CaliBuf[i].Delta  = CALI_DELTA_BASE;//修正偏差超限，置默认值
+                Ctrl.calitab.CaliBuf[i].line   = CALI_LINE_BASE; //线性度超限，置默认值
+                Ctrl.calitab.CaliBuf[i].Delta  = CALI_DELTA_BASE;//修正偏差超限，置默认值
 
             }
         
         //修正偏差检查
-        if(     sCtrl.calitab.CaliBuf[i].Delta < CALI_DELTA_MIN
-            ||  sCtrl.calitab.CaliBuf[i].Delta > CALI_DELTA_MAX
+        if(     Ctrl.calitab.CaliBuf[i].Delta < CALI_DELTA_MIN
+            ||  Ctrl.calitab.CaliBuf[i].Delta > CALI_DELTA_MAX
             ){
-                sCtrl.calitab.CaliBuf[i].Delta = CALI_DELTA_BASE;//修正偏差超限，置默认值
+                Ctrl.calitab.CaliBuf[i].Delta = CALI_DELTA_BASE;//修正偏差超限，置默认值
             }
     }
+    
+    /**************************************************************
+    * Description  : 读运行参数
+    * Author       : 2018/7/19 星期四, by redmorningcn
+    */
+    BSP_FlashReadBytes(STORE_ADDR_SYS,
+                       (u8 *)&Ctrl.sys,
+                       sizeof(Ctrl.sys));
+    
+    Ctrl.sys.id = get_boardID();
+	Ctrl.sys.cpu_freq = BSP_CPU_ClkFreq();  //时钟频率               /* Determine SysTick reference freq.              */
+
+    Ctrl.sys.paraflg.sysflg    = 0;        //不存系统参数（sys）
+    Ctrl.sys.paraflg.califlg   = 0;        //不存修正参数（cali）
+
+    if(Ctrl.sys.periodcali > 3*100 || Ctrl.sys.periodcali < 1*100)    //丢秒冲倍数，默认2倍信号周期 （*10）
+        Ctrl.sys.periodcali = 2*100;
+    
+    if(Ctrl.sys.loseerrtimes > 20 || Ctrl.sys.loseerrtimes < 2)          //丢脉冲故障判断次数
+        Ctrl.sys.loseerrtimes = 4;
+    
 }
 
 /**************************************************************
@@ -146,20 +170,20 @@ void    InitCtrl(void)
 */
 void    store_para(void)
 {
-    if(sCtrl.sys.paraflg.califlg == 1){
-        sCtrl.sys.paraflg.califlg = 0; 
+    if(Ctrl.sys.paraflg.califlg == 1){
+        Ctrl.sys.paraflg.califlg = 0; 
         
         BSP_FlashWriteBytes(STORE_ADDR_CALI,
-                        (u8 *)&sCtrl.calitab,
-                        sizeof(sCtrl.calitab));
+                        (u8 *)&Ctrl.calitab,
+                        sizeof(Ctrl.calitab));
     }
     
-    if(sCtrl.sys.paraflg.sysflg == 1){
-        sCtrl.sys.paraflg.sysflg = 0;
+    if(Ctrl.sys.paraflg.sysflg == 1){
+        Ctrl.sys.paraflg.sysflg = 0;
         
         BSP_FlashWriteBytes(STORE_ADDR_SYS,
-                            (u8 *)&sCtrl.sys,
-                            sizeof(sCtrl.sys));
+                            (u8 *)&Ctrl.sys,
+                            sizeof(Ctrl.sys));
     }
 }
         
@@ -171,9 +195,9 @@ void    store_para(void)
 void    idle_task(void)      
 {
     static  uint32  tick;
-    if(sCtrl.sys.time > tick+100 ||  sCtrl.sys.time < tick) //100ms
+    if(Ctrl.sys.time > tick+100 ||  Ctrl.sys.time < tick) //100ms
     {
-        tick = sCtrl.sys.time;                  //时间
+        tick = Ctrl.sys.time;                  //时间
         
         led_task();                             //指示灯控制
         
@@ -187,12 +211,14 @@ extern  void mod_bus_rx_task(void);
 
 void main (void)
 {
+    BSP_WDT_Init(BSP_WDT_MODE_INT);                             // 初始化看门狗（防止上电不能启动 redmorningcn 20180719）
+
 	BSP_Init();                                                 /* Initialize BSP functions                             */
 	CPU_TS_TmrInit();
 	/***********************************************
 	* 描述： 初始化滴答定时器，即初始化系统节拍时钟。
 	*/
-	sCtrl.sys.cpu_freq = BSP_CPU_ClkFreq();  //时钟频率               /* Determine SysTick reference freq.              */
+	Ctrl.sys.cpu_freq = BSP_CPU_ClkFreq();  //时钟频率               /* Determine SysTick reference freq.              */
     
     /*******************************************************************************
     * Description  : 信号幅值及工作电源电压检测初始化化
@@ -205,7 +231,7 @@ void main (void)
     * Author       : 2018/4/13 星期五, by redmorningcn
     *******************************************************************************/
     Init_boardID();
-    sCtrl.sys.id = get_boardID();
+    Ctrl.sys.id = get_boardID();
     
     /*******************************************************************************
     * Description  : 速度通道时间参数检测初始化
@@ -232,7 +258,7 @@ void main (void)
     *******************************************************************************/
     MB_Init(1000);      //初始化modbus频率					
 
-    sCtrl.pch         = MB_CfgCh( sCtrl.sys.id,        	// ... Modbus Node # for this slave channel
+    Ctrl.pch         = MB_CfgCh( Ctrl.sys.id,        	// ... Modbus Node # for this slave channel
                         //MB_CfgCh( ModbusNode,        	// ... Modbus Node # for this slave channel
                         MODBUS_SLAVE,           // ... This is a MASTER
                         500,                    // ... 0 when a slave
@@ -290,6 +316,13 @@ void main (void)
         * Author       : 2018/4/13 星期五, by redmorningcn
         *******************************************************************************/
         app_calc_ch_voltagepara();
+        
+        /**************************************************************
+        * Description  : 保存参数
+        * Author       : 2018/7/18 星期三, by redmorningcn
+        */
+        store_para();
+
         
         BSP_WDT_Rst();
     }

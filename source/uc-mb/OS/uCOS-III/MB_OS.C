@@ -346,7 +346,7 @@ static  void  MB_OS_RxTask (void *p_arg)
 		RxSignalFlg = 0;
 //		int i = 1000;
 //		while(i--);
- 	 	MB_RxTask(sCtrl.pch); 
+ 	 	MB_RxTask(Ctrl.pch); 
 	 }
 }
 #endif

@@ -16,4 +16,4 @@
 * Description  : 系统全局参数
 * Author       : 2018/5/4 星期五, by redmorningcn
 *******************************************************************************/ 
-Unnctrl sCtrl;      
+Unnctrl Ctrl;      

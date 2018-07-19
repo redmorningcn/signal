@@ -821,7 +821,7 @@ CPU_BOOLEAN  ASCII_IsGraph   (CPU_CHAR  c);
 
 CPU_BOOLEAN  ASCII_IsPunct   (CPU_CHAR  c);
 
-CPU_BOOLEAN  ASCII_IsCtrl    (CPU_CHAR  c);
+CPU_BOOLEAN  ASCII_ICtrl    (CPU_CHAR  c);
 
 
 CPU_CHAR     ASCII_ToLower   (CPU_CHAR  c);

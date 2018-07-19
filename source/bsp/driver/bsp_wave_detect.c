@@ -27,12 +27,12 @@ void TIM8_CC_IRQHandler(void)
 {
 
     uint16      cnt;
-    u32         time;                                //时间等于 sys.time * 65536+TIM_CNT     
+    u32         time;                               //时间等于 sys.time * 65536+TIM_CNT     
     
     //cnt  = TIM_CNT;
-    time = sCtrl.sys.time;                                //时间等于 sys.time * 65536+TIM_CNT     
+    time = Ctrl.sys.time;                           //时间等于 sys.time * 65536+TIM_CNT     
 	
-	if(TIM8->SR&0x04)								//CH2捕获中断 
+	if(TIM8->SR&0x04)                               //CH2捕获中断 
 	{
         cnt = TIM8->CCR2;
 
@@ -40,21 +40,21 @@ void TIM8_CC_IRQHandler(void)
         {     
             TIM_OC2PolarityConfig(TIM8,TIM_ICPolarity_Falling); //设置为下降沿捕获			
 
-            sCtrl.ch.test[0].time[sCtrl.ch.test[0].p_write].hig_up_time  = time;     
-            sCtrl.ch.test[0].time[sCtrl.ch.test[0].p_write].hig_up_cnt   = cnt;   
+            Ctrl.ch.test[0].time[Ctrl.ch.test[0].p_write].hig_up_time  = time;     
+            Ctrl.ch.test[0].time[Ctrl.ch.test[0].p_write].hig_up_cnt   = cnt;   
             
-            //sCtrl.ch.test[0].pluse_status = CH_RAISE_90_STATUS;       //上升沿，90%
+            //Ctrl.ch.test[0].pluse_status = CH_RAISE_90_STATUS;       //上升沿，90%
         }
-        else                                                    //高位（90%）下降沿触发，，正常波形90%到10%
+        else if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_7) == RESET)                                                   //高位（90%）下降沿触发，，正常波形90%到10%
         {    
             TIM_OC2PolarityConfig(TIM8,TIM_ICPolarity_Rising);  //设置为上升沿捕获
 
-            sCtrl.ch.test[0].time[sCtrl.ch.test[0].p_write].hig_down_time   = time;     
-            sCtrl.ch.test[0].time[sCtrl.ch.test[0].p_write].hig_down_cnt    = cnt;   
+            Ctrl.ch.test[0].time[Ctrl.ch.test[0].p_write].hig_down_time   = time;     
+            Ctrl.ch.test[0].time[Ctrl.ch.test[0].p_write].hig_down_cnt    = cnt;   
             
-            sCtrl.ch.test[0].pulse_cnt++;                             //周期结束放置在后面
+            Ctrl.ch.test[0].pulse_cnt++;                             //周期结束放置在后面
 
-            sCtrl.ch.test[0].pluse_status = CH_FALL_90_STATUS;       //下降沿，90%
+            Ctrl.ch.test[0].pluse_status = CH_FALL_90_STATUS;       //下降沿，90%
         }
         
         TIM_ClearITPendingBit(TIM8,TIM_IT_CC2);                 //清除中断标志
@@ -68,22 +68,22 @@ void TIM8_CC_IRQHandler(void)
         {  
             TIM_OC1PolarityConfig(TIM8,TIM_ICPolarity_Falling);//设置为下降沿捕获			
 
-            sCtrl.ch.test[0].time[sCtrl.ch.test[0].p_write].low_up_time    =  time;     
-            sCtrl.ch.test[0].time[sCtrl.ch.test[0].p_write].low_up_cnt     =  cnt;    
+            Ctrl.ch.test[0].time[Ctrl.ch.test[0].p_write].low_up_time    =  time;     
+            Ctrl.ch.test[0].time[Ctrl.ch.test[0].p_write].low_up_cnt     =  cnt;    
             
-            sCtrl.ch.test[0].pluse_status = CH_RAISE_10_STATUS;       //上升沿，10%
+            Ctrl.ch.test[0].pluse_status = CH_RAISE_10_STATUS;       //上升沿，10%
 
-        }else                                                   //低位（10%）的下降触发，正常波形的100%~90
+        }else if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_6) == RESET)                                              //低位（10%）的下降触发，正常波形的100%~90
         {           
             TIM_OC1PolarityConfig(TIM8,TIM_ICPolarity_Rising);  //设置为上升沿捕获
 
-            sCtrl.ch.test[0].time[sCtrl.ch.test[0].p_write].low_down_time    =  time;     
-            sCtrl.ch.test[0].time[sCtrl.ch.test[0].p_write].low_down_cnt     =  cnt; 
+            Ctrl.ch.test[0].time[Ctrl.ch.test[0].p_write].low_down_time    =  time;     
+            Ctrl.ch.test[0].time[Ctrl.ch.test[0].p_write].low_down_cnt     =  cnt; 
             
-            sCtrl.ch.test[0].p_write           =      sCtrl.ch.test[0].pulse_cnt 
+            Ctrl.ch.test[0].p_write           =      Ctrl.ch.test[0].pulse_cnt 
                 % CH_TIMEPARA_BUF_SIZE;
             
-            //sCtrl.ch.test[0].pluse_status = CH_FALL_10_STATUS;       //下降沿，10%
+            //Ctrl.ch.test[0].pluse_status = CH_FALL_10_STATUS;       //下降沿，10%
         }
         
         TIM_ClearITPendingBit(TIM8,TIM_IT_CC1);//清除中断标志
@@ -99,21 +99,21 @@ void TIM8_CC_IRQHandler(void)
         {     
             TIM_OC4PolarityConfig(TIM8,TIM_ICPolarity_Falling);//设置为下降沿捕获			
 
-            sCtrl.ch.test[1].time[sCtrl.ch.test[1].p_write].hig_up_time  = time;     
-            sCtrl.ch.test[1].time[sCtrl.ch.test[1].p_write].hig_up_cnt   = cnt;   
+            Ctrl.ch.test[1].time[Ctrl.ch.test[1].p_write].hig_up_time  = time;     
+            Ctrl.ch.test[1].time[Ctrl.ch.test[1].p_write].hig_up_cnt   = cnt;   
             
-            //sCtrl.ch.test[1].pluse_status = CH_RAISE_90_STATUS;       //上升沿，90%
+            //Ctrl.ch.test[1].pluse_status = CH_RAISE_90_STATUS;       //上升沿，90%
         }
-        else                                                    //高位（90%）下降沿触发
+        else  if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_9) == RESET)                                                  //高位（90%）下降沿触发
         {           
             TIM_OC4PolarityConfig(TIM8,TIM_ICPolarity_Rising);//设置为上升沿捕获		
 
-            sCtrl.ch.test[1].time[sCtrl.ch.test[1].p_write].hig_down_time   = time;     
-            sCtrl.ch.test[1].time[sCtrl.ch.test[1].p_write].hig_down_cnt    = cnt; 
+            Ctrl.ch.test[1].time[Ctrl.ch.test[1].p_write].hig_down_time   = time;     
+            Ctrl.ch.test[1].time[Ctrl.ch.test[1].p_write].hig_down_cnt    = cnt; 
             
-            sCtrl.ch.test[1].pulse_cnt++;                             //周期结束放置在后面
+            Ctrl.ch.test[1].pulse_cnt++;                             //周期结束放置在后面
 
-            sCtrl.ch.test[1].pluse_status = CH_FALL_90_STATUS;       //下降沿，90%
+            Ctrl.ch.test[1].pluse_status = CH_FALL_90_STATUS;       //下降沿，90%
         }
         
         TIM_ClearITPendingBit(TIM8,TIM_IT_CC4);//清除中断标志
@@ -127,23 +127,23 @@ void TIM8_CC_IRQHandler(void)
         {  
             TIM_OC3PolarityConfig(TIM8,TIM_ICPolarity_Falling); //设置为下降沿捕获			
 
-            sCtrl.ch.test[1].time[sCtrl.ch.test[1].p_write].low_up_time    =  time;     
-            sCtrl.ch.test[1].time[sCtrl.ch.test[1].p_write].low_up_cnt     =  cnt;    
+            Ctrl.ch.test[1].time[Ctrl.ch.test[1].p_write].low_up_time    =  time;     
+            Ctrl.ch.test[1].time[Ctrl.ch.test[1].p_write].low_up_cnt     =  cnt;    
             
-            sCtrl.ch.test[1].pluse_status = CH_RAISE_10_STATUS;       //上升沿，10%
+            Ctrl.ch.test[1].pluse_status = CH_RAISE_10_STATUS;       //上升沿，10%
         }
-        else                                                    //低位（10%）的下降触发
+        else  if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_8) == RESET)                                                  //低位（10%）的下降触发
         {     
             TIM_OC3PolarityConfig(TIM8,TIM_ICPolarity_Rising);  //设置为上升沿捕获		
 
-            sCtrl.ch.test[1].time[sCtrl.ch.test[1].p_write].low_down_time    =  time;     
-            sCtrl.ch.test[1].time[sCtrl.ch.test[1].p_write].low_down_cnt     =  cnt;  
+            Ctrl.ch.test[1].time[Ctrl.ch.test[1].p_write].low_down_time    =  time;     
+            Ctrl.ch.test[1].time[Ctrl.ch.test[1].p_write].low_down_cnt     =  cnt;  
             
             
-            sCtrl.ch.test[1].p_write             =        sCtrl.ch.test[1].pulse_cnt 
+            Ctrl.ch.test[1].p_write             =        Ctrl.ch.test[1].pulse_cnt 
                                                     % CH_TIMEPARA_BUF_SIZE;
             
-            //sCtrl.ch.test[1].pluse_status = CH_FALL_10_STATUS;        //下降沿，10%
+            //Ctrl.ch.test[1].pluse_status = CH_FALL_10_STATUS;        //下降沿，10%
         }
             
         TIM_ClearITPendingBit(TIM8,TIM_IT_CC3);                 //清除中断标志
@@ -161,7 +161,7 @@ void TIM8_OVER_IRQHandler(void)
 	if(TIM_GetITStatus(TIM8,TIM_IT_Update)!=RESET)  //计数器溢出中断
 	{
 		TIM_ClearITPendingBit(TIM8,TIM_IT_Update);  //清除中断标志
-        sCtrl.sys.time++;                           //系统是时间累加
+        Ctrl.sys.time++;                           //系统是时间累加
 	}
 }
 
@@ -190,7 +190,19 @@ void Timer8_Iint(void)
 	BSP_IntVectSet(TIM8_UP_IRQn, TIM8_OVER_IRQHandler);
 	BSP_IntEn(TIM8_UP_IRQn);
     
-    sCtrl.sys.time = 0;                                               //系统时间置0
+    /**************************************************************
+    * Description  : 设置中断优先级
+    * Author       : 2018/7/17 星期二, by redmorningcn
+    */
+    NVIC_InitTypeDef NVIC_InitStructure; 
+    NVIC_InitStructure.NVIC_IRQChannel = TIM8_UP_IRQn;  //
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority=0 ;    // 抢占优先级为0 
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;          // 子优先级位0 
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;             //IRQ通道使能
+
+    NVIC_Init(&NVIC_InitStructure);                             //根据上面指定的参数初始化NVIC寄存器    
+    
+    Ctrl.sys.time = 0;                                          //系统时间置0
 }
 
 

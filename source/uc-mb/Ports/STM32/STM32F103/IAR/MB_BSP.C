@@ -371,6 +371,18 @@ void  MB_CommPortCfg (MODBUS_CH  *pch,
     BSP_IntVectSet(BSP_INT_ID_USARTx, USARTx_RxTxISRHandler);
     BSP_IntEn(BSP_INT_ID_USARTx);
     
+    /**************************************************************
+    * Description  : 设置中断优先级
+    * Author       : 2018/7/17 星期二, by redmorningcn
+    */
+    NVIC_InitTypeDef NVIC_InitStructure; 
+    NVIC_InitStructure.NVIC_IRQChannel = BSP_INT_ID_USARTx;  //
+    NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority=1 ;// 抢占优先级为0 
+    NVIC_InitStructure.NVIC_IRQChannelSubPriority = 2;      // 子优先级位0 
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;         //IRQ通道使能
+
+    NVIC_Init(&NVIC_InitStructure);                         //根据上面指定的参数初始化NVIC寄存器    
+    
     if (pch != (MODBUS_CH *)0) {
         pch->PortNbr            = port_nbr;                                 /* Store configuration in channel             */
         pch->BaudRate           = baud;
