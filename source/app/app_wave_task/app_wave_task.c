@@ -10,6 +10,20 @@
 #include <app_wave_task.h>
 #include <Algorithm.h>
 
+//时间参数计算值过滤
+#define     CH_PARA_BUF_SIZE             (10)     
+
+typedef   struct   _strChTimeParaFliter_{
+    uint32              period[CH_PARA_BUF_SIZE];                         //周期，  0.00-2000000.00us （0.5Hz）
+    uint32              freq[CH_PARA_BUF_SIZE];                           //频率，  0-100000hz              
+    uint32              raise[CH_PARA_BUF_SIZE];                          //上升沿，0.00-50.00us
+    uint32              fail[CH_PARA_BUF_SIZE];                           //下降沿，0.00-50.00us
+    uint32              ratio[CH_PARA_BUF_SIZE];                          //占空比，0.00-100.00%
+    uint32              phase[CH_PARA_BUF_SIZE];
+}strChTimeParaFliter;
+
+strChTimeParaFliter     lsChTimeFliterBuf[2];
+u32                     timetmpbuf[CH_PARA_BUF_SIZE];
 
 /*******************************************************************************
 * Description  : 通道时间参数计算
@@ -33,9 +47,16 @@ void    app_calc_ch_timepara(void)
     s32     failtime;
     s32     phasetime;
     
-    u8      i;
-            
-    for(i = 0;i< 2;i++)
+    u32     freq;
+    
+    static  u8      i = 0;
+    static  u8      pparabuf[2] = {0,0};
+    
+    
+    i++;
+    i %= 2;
+        
+    //for(i = 0;i< 2;i++)
     {
         p_write = Ctrl.ch.test[i].p_write;
         p_read  = Ctrl.ch.test[i].p_read;
@@ -63,27 +84,44 @@ void    app_calc_ch_timepara(void)
             
             if(now_time <= next_time)
             {
-                periodtime = (next_time - now_time) * 65536 + next_cnt - now_cnt;  //redmonringcn 20180719 取消64位乘法运算
+                periodtime = (next_time - now_time) * 65536 + next_cnt - now_cnt;               //redmonringcn 20180719 取消64位乘法运算
                 
                 while(periodtime < 0)
                     periodtime += 65536;
+                
+                   App_FillAndMoveBuf32((u32 *)lsChTimeFliterBuf[i].period,CH_PARA_BUF_SIZE,periodtime);  //将数据写入buf，保留最近CH_PARA_BUF_SIZE的数据
+                
+                if(pparabuf[i] > 10)
+                    periodtime = App_GetFilterValue32((u32 *)lsChTimeFliterBuf[i].period, timetmpbuf, CH_PARA_BUF_SIZE, CH_PARA_BUF_SIZE/3, 0);    //数据过滤
                 
             }else   //时钟翻转，直接跳过
             {
                 //读指正++
                 Ctrl.ch.test[i].p_read++ ;
                 Ctrl.ch.test[i].p_read %= CH_TIMEPARA_BUF_SIZE; 
-                continue;           //跳过此处循环
+                //continue;           //跳过此处循环
+                return;
             }
             
             Ctrl.ch.para[i].period = (periodtime * 100 )/ (Ctrl.sys.cpu_freq / (1000*1000));
             
+            
             if(periodtime){
-                Ctrl.ch.para[i].freq = Ctrl.sys.cpu_freq  / periodtime;           //计算频率
+                //Ctrl.ch.para[i].freq = Ctrl.sys.cpu_freq  / periodtime;                       //计算频率
+                
+                freq = Ctrl.sys.cpu_freq  / periodtime;                                         //计算频率
+                  
+                App_FillAndMoveBuf32((u32 *)lsChTimeFliterBuf[i].freq,CH_PARA_BUF_SIZE,freq);   //将数据写入buf，保留最近CH_PARA_BUF_SIZE的数据
+
+                if(pparabuf[i] > 10)
+                    periodtime = App_GetFilterValue32((u32 *)lsChTimeFliterBuf[i].period, timetmpbuf, CH_PARA_BUF_SIZE, CH_PARA_BUF_SIZE/3, 0);    //数据过滤
+                
+                Ctrl.ch.para[i].freq = freq;
                 
                 if(((Ctrl.sys.cpu_freq *10) % periodtime)> 4 )                     //四舍五入
                     Ctrl.ch.para[i].freq += 1;
             }
+            
             
             /**************************************************************
             * Description  : 如果频率为0，后面计算，直接赋值0
@@ -98,7 +136,8 @@ void    app_calc_ch_timepara(void)
                 //读指正++
                 Ctrl.ch.test[i].p_read++ ;
                 Ctrl.ch.test[i].p_read %= CH_TIMEPARA_BUF_SIZE; 
-                continue;           //跳过此处循环
+                //continue;           //跳过此处循环
+                return;
             }
             
             /*******************************************************************************
@@ -117,6 +156,12 @@ void    app_calc_ch_timepara(void)
                 
                 while(ratiotime < 0)
                     ratiotime += 65536;
+                
+                App_FillAndMoveBuf32((u32 *)lsChTimeFliterBuf[i].ratio,CH_PARA_BUF_SIZE,ratiotime);  //将数据写入buf，保留最近CH_PARA_BUF_SIZE的数据
+                
+                if(pparabuf[i] > 10)
+                    ratiotime = App_GetFilterValue32((u32 *)lsChTimeFliterBuf[i].ratio, timetmpbuf, CH_PARA_BUF_SIZE, CH_PARA_BUF_SIZE/3, 0);    //数据过滤
+                
                 
                 if(periodtime)
                     Ctrl.ch.para[i].ratio = ( (uint64  )ratiotime * 100 * 100 ) / (periodtime ) ;                 
@@ -138,6 +183,11 @@ void    app_calc_ch_timepara(void)
                 
                 while(raisetime < 0)
                     raisetime += 65536;
+                
+                App_FillAndMoveBuf32((u32 *)lsChTimeFliterBuf[i].raise,CH_PARA_BUF_SIZE,raisetime);  //将数据写入buf，保留最近CH_PARA_BUF_SIZE的数据
+                
+                if(pparabuf[i] > 10)
+                    raisetime = App_GetFilterValue32((u32 *)lsChTimeFliterBuf[i].raise, timetmpbuf, CH_PARA_BUF_SIZE, CH_PARA_BUF_SIZE/3, 0);    //数据过滤
                 
                 Ctrl.ch.para[i].raise = (raisetime *100) / (Ctrl.sys.cpu_freq / (1000*1000)); 
 
@@ -162,6 +212,11 @@ void    app_calc_ch_timepara(void)
                 while(failtime < 0)
                     failtime += 65536;
                 
+                App_FillAndMoveBuf32((u32 *)lsChTimeFliterBuf[i].fail,CH_PARA_BUF_SIZE,failtime);  //将数据写入buf，保留最近CH_PARA_BUF_SIZE的数据
+                
+                if(pparabuf[i] > 10)
+                    failtime = App_GetFilterValue32((u32 *)lsChTimeFliterBuf[i].fail, timetmpbuf, CH_PARA_BUF_SIZE, CH_PARA_BUF_SIZE/3, 0);    //数据过滤
+                                
                 Ctrl.ch.para[i].fail = (failtime *100) / (Ctrl.sys.cpu_freq / (1000*1000)); 
 
                 if(Ctrl.ch.para[i].fail < 25 )  {                               //r补偿采样电路误差 180712 (减去固有误差)
@@ -197,6 +252,11 @@ void    app_calc_ch_timepara(void)
                     
                     while(phasetime < 0)
                         phasetime += periodtime;
+                    
+                    App_FillAndMoveBuf32((u32 *)lsChTimeFliterBuf[i].phase,CH_PARA_BUF_SIZE,phasetime);  //将数据写入buf，保留最近CH_PARA_BUF_SIZE的数据
+                    
+                    if(pparabuf[i] > 10)
+                        phasetime = App_GetFilterValue32((u32 *)lsChTimeFliterBuf[i].phase, timetmpbuf, CH_PARA_BUF_SIZE, CH_PARA_BUF_SIZE/3, 0);    //数据过滤
                     
                     if(periodtime)
                         Ctrl.ch.ch1_2phase = ((uint64)phasetime * 360 * 100) / periodtime ; 
@@ -239,11 +299,16 @@ void    app_calc_ch_timepara(void)
             Ctrl.ch.test[i].p_read %= CH_TIMEPARA_BUF_SIZE; 
             
             //取信号的高低电平
+            
+            if(pparabuf[i] < 15)
+                pparabuf[i]++;
         }
     }
 }
 
 #define     CALC_NUM_VOL  (10)
+
+
 /*******************************************************************************
 * Description  : 取信号电平检测值
 * Author       : 2018/3/29 星期四, by redmorningcn
@@ -324,7 +389,7 @@ void    app_calc_ch_voltagepara(void)
         {
             int32       voh,vol,vcc;  
             
-            nocalatimes     = 0;                //
+            nocalatimes     = 0;                                                //
             systime         = Ctrl.sys.time;
             
             /*******************************************************************************
@@ -382,10 +447,13 @@ void    app_calc_ch_voltagepara(void)
         systime = Ctrl.sys.time;
         nocalatimes++;
         
-        if(nocalatimes >20 ){
+        if(nocalatimes >20 ){                           //无信号，重新设置参考电压
             nocalatimes = 0;
             int32 vcc = Get_ADC(ADC_Channel_10+2);      //采集电压
-            Ctrl.ch.vcc_vol     = (vcc * Ctrl.calitab.VccVol.line / CALI_LINE_BASE) + Ctrl.calitab.VccVol.Delta;
+            if(vcc < 1550)                              //小于15V
+                Ctrl.ch.vcc_vol     = (vcc * Ctrl.calitab.VccVol.line / CALI_LINE_BASE) + Ctrl.calitab.VccVol.Delta;
+            else
+                Ctrl.ch.vcc_vol     = Ctrl.sys.ref_limitvol_min;    
         }
     }
 }

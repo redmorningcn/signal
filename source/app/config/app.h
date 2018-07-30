@@ -19,7 +19,6 @@ extern "C" {
 #include <app_wave.h>
 #include <includes.h>
 
-
     
 
 /*******************************************************************************
@@ -59,8 +58,14 @@ typedef struct
     struct{
         u16     periodcali;     //丢脉冲，周期系数*10（10-30）
         u16     loseerrtimes;       //丢脉冲次数。默认4次连续。
-    };        
-    uint8   buf[58];        // 预留         8
+    };     
+    
+    struct{
+        u16     ref_limitvol_min;    //参考电压（最小值） 默认值：750(750)       可设置范围 (600-800)
+        u16     ref_limitvol_max;    //参考电压（最大值） 默认值：1500（2.0V）   可设置范围 (1200-1800)
+    };
+    
+    uint8   buf[54];        // 预留         8
     uint32  cpu_freq;       // cpu频率      72
     uint32  time;           // 系统全局时间(系统时钟(1/72Mhz) *65536)=约1ms   76
 }strSysPara;    

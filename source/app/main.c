@@ -41,11 +41,17 @@ void    led_task(void)
 }
 
 //参考电压，单位mv
-#define     FULL_VOLTAGE            (3300)
-#define     STANDARD_VOLTAGE        (FULL_VOLTAGE/4)
-#define     MAX_HIG_VOLTAGE         (3000)
-#define     MAX_STANDARD_VOLTAGE    (1500)        
-#define     REF_VOLTAGE_RATIO       (0.80)
+#define     FULL_VOLTAGE            (3300)          /*  工作电压            */
+
+#define     MAX_HIG_VOLTAGE         (3000)          /*  最大高电平              */
+#define     MAX_STANDARD_VOLTAGE    (1500)          /*  默认参考电压大值        */  
+#define     MAX_STANDARD_ZONE       (300)           /*  参考电压大值范围        */
+#define     MIN_STANDARD_VOLTAGE    (750)           /*  默认参考电压小值        */
+#define     MIN_STANDARD_ZONE       (150)           /*  默认参考电压小值范围    */ 
+
+#define     REF_VOLTAGE_RATIO       (0.75)          /* 参考电压和高电平系数关系 */
+
+
 /*******************************************************************************
 * Description  : 设置参考电压，定期调用（100ms）
                 参考电压为高电平的0.09，（取10%电压的0.9倍），高电平采样点在10%位置
@@ -61,9 +67,9 @@ void    set_dac_task(void)
     for(i = 0;i< 2;i++)
     if( Ctrl.ch.para[i].freq )                                           //通道0、或通道1有速度信号
     {
-        if(fabs(Ctrl.ch.stand_vol -  Ctrl.ch.para[i].Voh * REF_VOLTAGE_RATIO) > (FULL_VOLTAGE/100)*2 )    //电压偏差小于10% ；
+        if(fabs(Ctrl.ch.stand_vol -  Ctrl.ch.para[i].Voh * REF_VOLTAGE_RATIO) > (FULL_VOLTAGE/100) )    //电压偏差小于10% ；
         {
-            if(Ctrl.ch.para[i].Voh < MAX_HIG_VOLTAGE)                    //高电平最高3V
+            if(Ctrl.ch.para[i].Voh < MAX_HIG_VOLTAGE    )                    //高电平最高3V
             {
                 sum += Ctrl.ch.para[i].Voh;
                 diffcnt++;
@@ -71,18 +77,26 @@ void    set_dac_task(void)
             
             if( diffcnt > 10 )                                              //连续5次，采集的高电平电压和设置电压
             {
-                Ctrl.ch.stand_vol =(u16)((sum / diffcnt)*REF_VOLTAGE_RATIO)/10;
+                Ctrl.ch.stand_vol =(u16)((sum / diffcnt)*REF_VOLTAGE_RATIO);
                 
-                if( Ctrl.ch.stand_vol > MAX_STANDARD_VOLTAGE  )          //限定比较器的参考电压在1.5V和0.66V之间
+                if( Ctrl.ch.stand_vol > Ctrl.sys.ref_limitvol_max  )          //限定比较器的参考电压在1.5V和0.66V之间
                 {
-                    Ctrl.ch.stand_vol   = MAX_STANDARD_VOLTAGE;          //1.5v
+                    Ctrl.ch.stand_vol   = Ctrl.sys.ref_limitvol_max;          //1.5v
                 }
-                else if(Ctrl.ch.stand_vol < STANDARD_VOLTAGE)
+                else if(Ctrl.ch.stand_vol < Ctrl.sys.ref_limitvol_min)
                 {
-                    Ctrl.ch.stand_vol  = STANDARD_VOLTAGE;               //0.8V
+                    Ctrl.ch.stand_vol  = Ctrl.sys.ref_limitvol_min;               //0.8V
                 }
                 
                 bsp_set_dacvalue(Ctrl.ch.stand_vol);                     //重新设置比较值
+                
+                
+                /**************************************************************
+                * Description  : 重新计算
+                * Author       : 2018/7/20 星期五, by redmorningcn
+                */
+                diffcnt = 0;
+                sum     = 0;
                 
                 return;
             }
@@ -93,19 +107,19 @@ void    set_dac_task(void)
             diffcnt = 0;
         }
     }else{
-                                                              // (如果没有信号，按照默认值设置)
+                                                                                // (如果没有信号，按照默认值设置)
         if(i==1){
         
-            if( Ctrl.ch.stand_vol > MAX_STANDARD_VOLTAGE  )                //限定比较器的参考电压在1.5V和0.66V之间
+            if( Ctrl.ch.stand_vol >  Ctrl.sys.ref_limitvol_max  )               //限定比较器的参考电压在1.5V和0.66V之间
             {
-                Ctrl.ch.stand_vol  = MAX_STANDARD_VOLTAGE;                 //1.5v
+                Ctrl.ch.stand_vol  = Ctrl.sys.ref_limitvol_max;                 //1.5v
             }
-            else if(Ctrl.ch.stand_vol < STANDARD_VOLTAGE)
+            else if(Ctrl.ch.stand_vol < Ctrl.sys.ref_limitvol_min)
             {
-                Ctrl.ch.stand_vol  = STANDARD_VOLTAGE;                      //0.8V
+                Ctrl.ch.stand_vol  = Ctrl.sys.ref_limitvol_min;                 //0.8V
             }
             
-            bsp_set_dacvalue(Ctrl.ch.stand_vol);                           //重新设置比较值  
+            bsp_set_dacvalue(Ctrl.ch.stand_vol);                                //重新设置比较值  
         }
     }
 }
@@ -162,6 +176,15 @@ void    InitCtrl(void)
     if(Ctrl.sys.loseerrtimes > 20 || Ctrl.sys.loseerrtimes < 2)          //丢脉冲故障判断次数
         Ctrl.sys.loseerrtimes = 4;
     
+    if(     Ctrl.sys.ref_limitvol_min < (MIN_STANDARD_VOLTAGE - MIN_STANDARD_ZONE) 
+       ||   Ctrl.sys.ref_limitvol_min > (MIN_STANDARD_VOLTAGE + MIN_STANDARD_ZONE) ) {   //读取得参考电压不满足限定条件
+           Ctrl.sys.ref_limitvol_min = MIN_STANDARD_VOLTAGE;
+    }
+    
+    if(     Ctrl.sys.ref_limitvol_max < (MAX_STANDARD_VOLTAGE - MAX_STANDARD_ZONE) 
+       ||   Ctrl.sys.ref_limitvol_max > (MAX_STANDARD_VOLTAGE + MAX_STANDARD_ZONE) ) {   //读取得参考电压不满足限定条件
+            Ctrl.sys.ref_limitvol_max = MAX_STANDARD_VOLTAGE;
+    }    
 }
 
 /**************************************************************
@@ -173,17 +196,17 @@ void    store_para(void)
     if(Ctrl.sys.paraflg.califlg == 1){
         Ctrl.sys.paraflg.califlg = 0; 
         
-        BSP_FlashWriteBytes(STORE_ADDR_CALI,
-                        (u8 *)&Ctrl.calitab,
-                        sizeof(Ctrl.calitab));
+        BSP_FlashWriteBytes(    STORE_ADDR_CALI,
+                                (u8 *)&Ctrl.calitab,
+                                sizeof(Ctrl.calitab) );
     }
     
     if(Ctrl.sys.paraflg.sysflg == 1){
         Ctrl.sys.paraflg.sysflg = 0;
         
-        BSP_FlashWriteBytes(STORE_ADDR_SYS,
-                            (u8 *)&Ctrl.sys,
-                            sizeof(Ctrl.sys));
+        BSP_FlashWriteBytes(    STORE_ADDR_SYS,
+                                (u8 *)&Ctrl.sys,
+                                sizeof(Ctrl.sys)    );
     }
 }
         
@@ -195,15 +218,15 @@ void    store_para(void)
 void    idle_task(void)      
 {
     static  uint32  tick;
-    if(Ctrl.sys.time > tick+100 ||  Ctrl.sys.time < tick) //100ms
+    if(Ctrl.sys.time > tick+100 ||  Ctrl.sys.time < tick)   //100ms
     {
-        tick = Ctrl.sys.time;                  //时间
+        tick = Ctrl.sys.time;                               //时间
         
-        led_task();                             //指示灯控制
+        led_task();                                         //指示灯控制
         
-        set_dac_task();                         //设置参考电压
+        set_dac_task();                                     //设置参考电压
         
-        store_para();                           //保存参数
+        store_para();                                       //保存参数
     }
 }
 
@@ -218,7 +241,7 @@ void main (void)
 	/***********************************************
 	* 描述： 初始化滴答定时器，即初始化系统节拍时钟。
 	*/
-	Ctrl.sys.cpu_freq = BSP_CPU_ClkFreq();  //时钟频率               /* Determine SysTick reference freq.              */
+	Ctrl.sys.cpu_freq = BSP_CPU_ClkFreq();  //时钟频率          /* Determine SysTick reference freq.              */
     
     /*******************************************************************************
     * Description  : 信号幅值及工作电源电压检测初始化化

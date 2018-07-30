@@ -50,17 +50,23 @@ typedef struct  _strsignalchannelpara{
     
     union{
         struct{
-            u16         lose    :1  ;                   //丢脉冲
-            u16         nopluse :1  ;                   //无信号
-            u16         rec     :14 ;
+            u8         lose    :1  ;                   //丢脉冲
+            u8         nopluse :1  ;                   //无信号
+            u8         rec     :6 ;
+            
+            s8         acceleration;                   //加速度
         };
         u16             flags;
     }status;                         //通道状态
 }strsignalchannelpara;
 
+
+
 /*******************************************************************************
  * TYPEDEFS
  */
+
+
 
 /*******************************************************************************
 * Description  : 通道结构体。其中，通道时间参数辅助运算；
@@ -94,11 +100,14 @@ typedef struct
         union  
         {
             struct __pluse_status__ {                      // 信号状态
-                uint32  raise_10: 1;                        // 上升位置——10%
-                uint32  raise_90: 1;       	                // 上升位置--90%
-                uint32  fall_90 : 1;       	                // 下降位置--10
-                uint32  fall_10 : 1;  	                    // 其他：未定义
-                uint32  res     : 28;  	                    // 其他：未定义
+                uint16  raise_10: 1;                        // 上升位置——10%
+                uint16  raise_90: 1;       	                // 上升位置--90%
+                uint16  fall_90 : 1;       	                // 下降位置--10
+                uint16  fall_10 : 1;  	                    // 其他：未定义
+                uint16  res     : 12;  	                    // 其他：未定义
+                
+                u8      res1    ;                           //预留
+                s8      acceleration;                       //加速度
             }station;
             uint32  pluse_status;
         };        
