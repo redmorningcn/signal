@@ -20,10 +20,15 @@ typedef   struct   _strChTimeParaFliter_{
     uint32              fail[CH_PARA_BUF_SIZE];                           //下降沿，0.00-50.00us
     uint32              ratio[CH_PARA_BUF_SIZE];                          //占空比，0.00-100.00%
     uint32              phase[CH_PARA_BUF_SIZE];
+    int32               Acceleration[CH_PARA_BUF_SIZE];                   //加速度
 }strChTimeParaFliter;
 
 strChTimeParaFliter     lsChTimeFliterBuf[2];
 u32                     timetmpbuf[CH_PARA_BUF_SIZE];
+
+
+
+
 
 /*******************************************************************************
 * Description  : 通道时间参数计算
@@ -48,6 +53,7 @@ void    app_calc_ch_timepara(void)
     s32     phasetime;
     
     u32     freq;
+    s32     Acceleration;
     
     static  u8      i = 0;
     static  u8      pparabuf[2] = {0,0};
@@ -91,7 +97,7 @@ void    app_calc_ch_timepara(void)
                 
                    App_FillAndMoveBuf32((u32 *)lsChTimeFliterBuf[i].period,CH_PARA_BUF_SIZE,periodtime);  //将数据写入buf，保留最近CH_PARA_BUF_SIZE的数据
                 
-                if(pparabuf[i] > 10)
+                if(pparabuf[i] > CH_PARA_BUF_SIZE)
                     periodtime = App_GetFilterValue32((u32 *)lsChTimeFliterBuf[i].period, timetmpbuf, CH_PARA_BUF_SIZE, CH_PARA_BUF_SIZE/3, 0);    //数据过滤
                 
             }else   //时钟翻转，直接跳过
@@ -113,7 +119,7 @@ void    app_calc_ch_timepara(void)
                   
                 App_FillAndMoveBuf32((u32 *)lsChTimeFliterBuf[i].freq,CH_PARA_BUF_SIZE,freq);   //将数据写入buf，保留最近CH_PARA_BUF_SIZE的数据
 
-                if(pparabuf[i] > 10)
+                if(pparabuf[i] > CH_PARA_BUF_SIZE)
                     periodtime = App_GetFilterValue32((u32 *)lsChTimeFliterBuf[i].period, timetmpbuf, CH_PARA_BUF_SIZE, CH_PARA_BUF_SIZE/3, 0);    //数据过滤
                 
                 Ctrl.ch.para[i].freq = freq;
@@ -139,6 +145,55 @@ void    app_calc_ch_timepara(void)
                 //continue;           //跳过此处循环
                 return;
             }
+            
+            
+            
+            /**************************************************************
+            * Description  : 计算加速度
+            a = K * fm * （fm-fn）/(m-n)
+            k = 200 / 3.14 /1.05 = 60
+            * Author       : 2018/7/31 星期二, by redmorningcn
+            */
+            if(pparabuf[i] > CH_PARA_BUF_SIZE){
+                s32 freqend,freqstart;
+                
+                static  u8  acceltimes = 0;
+                
+                freqend     = lsChTimeFliterBuf[i].freq[CH_PARA_BUF_SIZE - 1];
+                freqstart   = lsChTimeFliterBuf[i].freq[0];
+                Acceleration =  freqend * (freqend - freqstart) / (60*CH_PARA_BUF_SIZE);     //计算加速度
+                
+                u8  accelbufsize = CH_PARA_BUF_SIZE;
+                App_FillAndMoveBuf32((u32 *)lsChTimeFliterBuf[i].Acceleration,accelbufsize,Acceleration);   //将数据写入buf，保留最近CH_PARA_BUF_SIZE的数据
+
+                if(acceltimes > accelbufsize){
+                    acceltimes = 0;
+                    s8  addtimes    = 0;
+                    int accelsum    = 0;
+                    
+                    for(u8 j= 0;j < accelbufsize  ;j++ ){
+                        
+                        accelsum += lsChTimeFliterBuf[i].Acceleration[j];
+                        if(lsChTimeFliterBuf[i].Acceleration[j] > 100 ){
+                            addtimes++;
+                        }else if(lsChTimeFliterBuf[i].Acceleration[j] < -100 ){
+                            addtimes--;
+                        }
+                    }
+                    
+                    if(abs(addtimes) == accelbufsize ){                         //全正或全负
+                        Ctrl.ch.para[i].status.acceleration = accelsum/(accelbufsize * 100 );         
+                        
+                    }else{
+                        Ctrl.ch.para[i].status.acceleration = 0;
+                    }
+                }
+                acceltimes++;
+                    
+            }
+                
+            
+            
             
             /*******************************************************************************
             * Description  : 计算占空比(xx.xx%)，( hig_down -  low_up ) / period
@@ -186,7 +241,7 @@ void    app_calc_ch_timepara(void)
                 
                 App_FillAndMoveBuf32((u32 *)lsChTimeFliterBuf[i].raise,CH_PARA_BUF_SIZE,raisetime);  //将数据写入buf，保留最近CH_PARA_BUF_SIZE的数据
                 
-                if(pparabuf[i] > 10)
+                if(pparabuf[i] > CH_PARA_BUF_SIZE)
                     raisetime = App_GetFilterValue32((u32 *)lsChTimeFliterBuf[i].raise, timetmpbuf, CH_PARA_BUF_SIZE, CH_PARA_BUF_SIZE/3, 0);    //数据过滤
                 
                 Ctrl.ch.para[i].raise = (raisetime *100) / (Ctrl.sys.cpu_freq / (1000*1000)); 
@@ -214,7 +269,7 @@ void    app_calc_ch_timepara(void)
                 
                 App_FillAndMoveBuf32((u32 *)lsChTimeFliterBuf[i].fail,CH_PARA_BUF_SIZE,failtime);  //将数据写入buf，保留最近CH_PARA_BUF_SIZE的数据
                 
-                if(pparabuf[i] > 10)
+                if(pparabuf[i] > CH_PARA_BUF_SIZE)
                     failtime = App_GetFilterValue32((u32 *)lsChTimeFliterBuf[i].fail, timetmpbuf, CH_PARA_BUF_SIZE, CH_PARA_BUF_SIZE/3, 0);    //数据过滤
                                 
                 Ctrl.ch.para[i].fail = (failtime *100) / (Ctrl.sys.cpu_freq / (1000*1000)); 
@@ -255,7 +310,7 @@ void    app_calc_ch_timepara(void)
                     
                     App_FillAndMoveBuf32((u32 *)lsChTimeFliterBuf[i].phase,CH_PARA_BUF_SIZE,phasetime);  //将数据写入buf，保留最近CH_PARA_BUF_SIZE的数据
                     
-                    if(pparabuf[i] > 10)
+                    if(pparabuf[i] > CH_PARA_BUF_SIZE)
                         phasetime = App_GetFilterValue32((u32 *)lsChTimeFliterBuf[i].phase, timetmpbuf, CH_PARA_BUF_SIZE, CH_PARA_BUF_SIZE/3, 0);    //数据过滤
                     
                     if(periodtime)
@@ -300,7 +355,7 @@ void    app_calc_ch_timepara(void)
             
             //取信号的高低电平
             
-            if(pparabuf[i] < 15)
+            if(pparabuf[i] < CH_PARA_BUF_SIZE +5)
                 pparabuf[i]++;
         }
     }
