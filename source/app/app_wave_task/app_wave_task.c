@@ -12,6 +12,8 @@
 
 //时间参数计算值过滤
 #define     CH_PARA_BUF_SIZE             (10)     
+//边沿时间补偿系数
+#define     CH_EDGE_CALI                 (1.1)
 
 typedef   struct   _strChTimeParaFliter_{
     uint32              period[CH_PARA_BUF_SIZE];                         //周期，  0.00-2000000.00us （0.5Hz）
@@ -55,6 +57,8 @@ void    app_calc_ch_timepara(void)
     u32     freq;
     s32     Acceleration;
     
+    u32     pri_period[2];          //计算丢脉冲使用，原始周期值
+        
     static  u8      i = 0;
     static  u8      pparabuf[2] = {0,0};
     
@@ -95,6 +99,8 @@ void    app_calc_ch_timepara(void)
                 while(periodtime < 0)
                     periodtime += 65536;
                 
+                   pri_period[i] =  (periodtime * 100 )/ (Ctrl.sys.cpu_freq / (1000*1000));//计算丢脉冲时使用。
+                       
                    App_FillAndMoveBuf32((u32 *)lsChTimeFliterBuf[i].period,CH_PARA_BUF_SIZE,periodtime);  //将数据写入buf，保留最近CH_PARA_BUF_SIZE的数据
                 
                 if(pparabuf[i] > CH_PARA_BUF_SIZE)
@@ -244,7 +250,7 @@ void    app_calc_ch_timepara(void)
                 if(pparabuf[i] > CH_PARA_BUF_SIZE)
                     raisetime = App_GetFilterValue32((u32 *)lsChTimeFliterBuf[i].raise, timetmpbuf, CH_PARA_BUF_SIZE, CH_PARA_BUF_SIZE/3, 0);    //数据过滤
                 
-                Ctrl.ch.para[i].raise = (raisetime *100) / (Ctrl.sys.cpu_freq / (1000*1000)); 
+                Ctrl.ch.para[i].raise = CH_EDGE_CALI*(raisetime *100) / (Ctrl.sys.cpu_freq / (1000*1000)); 
 
                 if(Ctrl.ch.para[i].raise  > 1500)
                     Ctrl.ch.para[i].raise  = 1500;
@@ -272,7 +278,7 @@ void    app_calc_ch_timepara(void)
                 if(pparabuf[i] > CH_PARA_BUF_SIZE)
                     failtime = App_GetFilterValue32((u32 *)lsChTimeFliterBuf[i].fail, timetmpbuf, CH_PARA_BUF_SIZE, CH_PARA_BUF_SIZE/3, 0);    //数据过滤
                                 
-                Ctrl.ch.para[i].fail = (failtime *100) / (Ctrl.sys.cpu_freq / (1000*1000)); 
+                Ctrl.ch.para[i].fail = CH_EDGE_CALI*(failtime *100) / (Ctrl.sys.cpu_freq / (1000*1000)); 
 
                 if(Ctrl.ch.para[i].fail < 25 )  {                               //r补偿采样电路误差 180712 (减去固有误差)
                     Ctrl.ch.para[i].fail /=  5;
@@ -331,7 +337,7 @@ void    app_calc_ch_timepara(void)
             static  u32     lastperiod[2]   ={0,0};         //上次周期
             
             //前后周期对比
-            if(Ctrl.ch.para[i].period * (Ctrl.sys.periodcali / 100) < lastperiod[i] ){
+            if(pri_period[i] * (Ctrl.sys.periodcali / 100) < lastperiod[i] ){
                 plusetimes[i] = 0;
                 perioderrcnt[i]++;
                 
@@ -341,13 +347,13 @@ void    app_calc_ch_timepara(void)
             }else{
                 plusetimes[i]++;                        
                 
-                if(plusetimes[i] > CIRCLE_PLUSE_NUM*(1.1) )     // 如果产生的错误，经过1圈后，未在发生，则认为是误判。
+                if(plusetimes[i] > CIRCLE_PLUSE_NUM*(1.05) )     // 如果产生的错误，经过1圈后，未在发生，则认为是误判。
                 {
                     perioderrcnt[i] = 0;                        // 错误计数器清零
                     Ctrl.ch.para[i].status.lose = 0;   
                 }
             }
-            lastperiod[i] = Ctrl.ch.para[i].period;             // 下次判断使用
+            lastperiod[i] = pri_period[i];                      // 下次判断使用
             
             //读指正++
             Ctrl.ch.test[i].p_read++ ;
@@ -553,7 +559,8 @@ void    app_ch_judge(void)
                         Ctrl.ch.para[i].period   = 0;
                         Ctrl.ch.para[i].raise    = 0;
                         Ctrl.ch.para[i].ratio    = 0;
-                        Ctrl.ch.para[i].status.nopluse = 1;    //无脉冲信号
+                        Ctrl.ch.para[i].status.flags    = 0;
+                        Ctrl.ch.para[i].status.nopluse  = 1;    //无脉冲信号
                         Ctrl.ch.para[i].Voh      = 0;
                         Ctrl.ch.para[i].Vol      = 0;
                         

@@ -170,11 +170,11 @@ void    InitCtrl(void)
     Ctrl.sys.paraflg.sysflg    = 0;        //不存系统参数（sys）
     Ctrl.sys.paraflg.califlg   = 0;        //不存修正参数（cali）
 
-    if(Ctrl.sys.periodcali > 3*100 || Ctrl.sys.periodcali < 1*100)    //丢秒冲倍数，默认2倍信号周期 （*10）
-        Ctrl.sys.periodcali = 2*100;
+    if(Ctrl.sys.periodcali > 5*100 || Ctrl.sys.periodcali < 1.5*100)    //丢秒冲倍数，默认2倍信号周期 （*10）
+        Ctrl.sys.periodcali = (u32)(2.01*100);
     
-    if(Ctrl.sys.loseerrtimes > 20 || Ctrl.sys.loseerrtimes < 2)          //丢脉冲故障判断次数
-        Ctrl.sys.loseerrtimes = 4;
+    if(Ctrl.sys.loseerrtimes > 30 || Ctrl.sys.loseerrtimes < 3)          //丢脉冲故障判断次数
+        Ctrl.sys.loseerrtimes = 10;
     
     if(     Ctrl.sys.ref_limitvol_min < (MIN_STANDARD_VOLTAGE - MIN_STANDARD_ZONE) 
        ||   Ctrl.sys.ref_limitvol_min > (MIN_STANDARD_VOLTAGE + MIN_STANDARD_ZONE) ) {   //读取得参考电压不满足限定条件
