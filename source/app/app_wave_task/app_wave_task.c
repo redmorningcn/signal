@@ -282,11 +282,15 @@ void    app_calc_ch_timepara(void)
 
                 if(Ctrl.ch.para[i].fail < 25 )  {                               //r补偿采样电路误差 180712 (减去固有误差)
                     Ctrl.ch.para[i].fail /=  5;
-                }else{
+                }else if(Ctrl.ch.para[i].fail < 45){
                     Ctrl.ch.para[i].fail -= 25;
                     
-                    if(Ctrl.ch.para[i].fail < 5)
-                        Ctrl.ch.para[i].fail = 5;
+                    Ctrl.ch.para[i].fail = 5 + (Ctrl.ch.para[i].fail / 4);
+                }else{
+                    Ctrl.ch.para[i].fail -= 45;
+                    
+                    if(Ctrl.ch.para[i].fail < ( 5 + 5 ))
+                        Ctrl.ch.para[i].fail = 5 + 5;
                 }
                 
                 if(Ctrl.ch.para[i].fail  > 1500)
