@@ -236,12 +236,12 @@ void main (void)
 {
     BSP_WDT_Init(BSP_WDT_MODE_INT);                             // 初始化看门狗（防止上电不能启动 redmorningcn 20180719）
 
-	BSP_Init();                                                 /* Initialize BSP functions                             */
+	BSP_Init();                                                 /* Initialize BSP functions                 */
 	CPU_TS_TmrInit();
 	/***********************************************
 	* 描述： 初始化滴答定时器，即初始化系统节拍时钟。
 	*/
-	Ctrl.sys.cpu_freq = BSP_CPU_ClkFreq();  //时钟频率          /* Determine SysTick reference freq.              */
+	Ctrl.sys.cpu_freq = BSP_CPU_ClkFreq();  //时钟频率          /* Determine SysTick reference freq.        */
     
     /*******************************************************************************
     * Description  : 信号幅值及工作电源电压检测初始化化

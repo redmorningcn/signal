@@ -83,7 +83,7 @@ void    app_calc_ch_timepara(void)
             * Description  : 计算周期(0.01us) 周期信号任意一点再次出现，取low_up中断为标准
             * Author       : 2018/3/13 星期二, by redmorningcn
             *******************************************************************************/
-            p_read      =   Ctrl.ch.test[i].p_read;
+            p_read      = Ctrl.ch.test[i].p_read;
             p_next      = (p_read + 1) % CH_TIMEPARA_BUF_SIZE;
             
             now_time    = Ctrl.ch.test[i].time[p_read].hig_up_time;
@@ -106,7 +106,8 @@ void    app_calc_ch_timepara(void)
                 if(pparabuf[i] > CH_PARA_BUF_SIZE)
                     periodtime = App_GetFilterValue32((u32 *)lsChTimeFliterBuf[i].period, timetmpbuf, CH_PARA_BUF_SIZE, CH_PARA_BUF_SIZE/3, 0);    //数据过滤
                 
-            }else   //时钟翻转，直接跳过
+            }
+            else   //时钟翻转，直接跳过
             {
                 //读指正++
                 Ctrl.ch.test[i].p_read++ ;
@@ -134,7 +135,6 @@ void    app_calc_ch_timepara(void)
                     Ctrl.ch.para[i].freq += 1;
             }
             
-            
             /**************************************************************
             * Description  : 如果频率为0，后面计算，直接赋值0
             * Author       : 2018/7/18 星期三, by redmorningcn
@@ -151,8 +151,6 @@ void    app_calc_ch_timepara(void)
                 //continue;           //跳过此处循环
                 return;
             }
-            
-            
             
             /**************************************************************
             * Description  : 计算加速度
@@ -197,10 +195,7 @@ void    app_calc_ch_timepara(void)
                 acceltimes++;
                     
             }
-                
-            
-            
-            
+
             /*******************************************************************************
             * Description  : 计算占空比(xx.xx%)，( hig_down -  low_up ) / period
             * Author       : 2018/3/13 星期二, by redmorningcn
@@ -213,7 +208,7 @@ void    app_calc_ch_timepara(void)
             
             if(now_time <= next_time)
             {
-                ratiotime = (next_time - now_time) * 65536 + next_cnt - now_cnt;    //redmonringcn 20180719 取消64位乘法运算
+                ratiotime = (next_time - now_time) * 65536 + next_cnt - now_cnt;                    //redmonringcn 20180719 取消64位乘法运算
                 
                 while(ratiotime < 0)
                     ratiotime += 65536;
@@ -222,7 +217,6 @@ void    app_calc_ch_timepara(void)
                 
                 if(pparabuf[i] > 10)
                     ratiotime = App_GetFilterValue32((u32 *)lsChTimeFliterBuf[i].ratio, timetmpbuf, CH_PARA_BUF_SIZE, CH_PARA_BUF_SIZE/3, 0);    //数据过滤
-                
                 
                 if(periodtime)
                     Ctrl.ch.para[i].ratio = ( (uint64  )ratiotime * 100 * 100 ) / (periodtime ) ;                 
@@ -240,7 +234,7 @@ void    app_calc_ch_timepara(void)
             
             if(now_time <= next_time)
             {
-                raisetime = (next_time - now_time) * 65536 + next_cnt - now_cnt;    //redmonringcn 20180719 取消64位乘法运算
+                raisetime = (next_time - now_time) * 65536 + next_cnt - now_cnt;                    //redmonringcn 20180719 取消64位乘法运算
                 
                 while(raisetime < 0)
                     raisetime += 65536;

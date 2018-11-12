@@ -36,18 +36,20 @@ void TIM8_CC_IRQHandler(void)
 	{
         cnt = TIM8->CCR2;
 
-        if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_7) == SET)      //高位（90%）的上升触发,,,正常波形的从0~10%
+        //if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_7) == SET)      //高位（90%）的上升触发,,,正常波形的从0~10%
+        if((GPIOC->IDR & GPIO_Pin_7) != (uint32_t)Bit_RESET)
         {     
             TIM_OC2PolarityConfig(TIM8,TIM_ICPolarity_Falling); //设置为下降沿捕获			
 
             Ctrl.ch.test[0].time[Ctrl.ch.test[0].p_write].hig_up_time  = time;     
             Ctrl.ch.test[0].time[Ctrl.ch.test[0].p_write].hig_up_cnt   = cnt;   
             
-            //Ctrl.ch.test[0].pluse_status = CH_RAISE_90_STATUS;       //上升沿，90%
+            //Ctrl.ch.test[0].pluse_status = CH_RAISE_90_STATUS;    //上升沿，90%
         }
-        else if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_7) == RESET)                                                   //高位（90%）下降沿触发，，正常波形90%到10%
+        //else if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_7) == RESET)                                                   //高位（90%）下降沿触发，，正常波形90%到10%
+        else if((GPIOC->IDR & GPIO_Pin_7) == (uint32_t)Bit_RESET)
         {    
-            TIM_OC2PolarityConfig(TIM8,TIM_ICPolarity_Rising);  //设置为上升沿捕获
+            TIM_OC2PolarityConfig(TIM8,TIM_ICPolarity_Rising);      //设置为上升沿捕获
 
             Ctrl.ch.test[0].time[Ctrl.ch.test[0].p_write].hig_down_time   = time;     
             Ctrl.ch.test[0].time[Ctrl.ch.test[0].p_write].hig_down_cnt    = cnt;   
@@ -57,23 +59,28 @@ void TIM8_CC_IRQHandler(void)
             Ctrl.ch.test[0].pluse_status = CH_FALL_90_STATUS;       //下降沿，90%
         }
         
-        TIM_ClearITPendingBit(TIM8,TIM_IT_CC2);                 //清除中断标志
+        //TIM_ClearITPendingBit(TIM8,TIM_IT_CC2);                     //清除中断标志
+        TIM8->SR = (uint16_t)~TIM_IT_CC2;
+
 	}
     
-	if(TIM8->SR&0x02)								            //CC1捕获中断 
+	if(TIM8->SR&0x02)								                //CC1捕获中断 
 	{
 
         cnt = TIM8->CCR1;
-        if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_6) == SET)      //低位（10%）的上升触发，正常波形的10%~90%
+        //if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_6) == SET)          //低位（10%）的上升触发，正常波形的10%~90%
+        if((GPIOC->IDR & GPIO_Pin_6) != (uint32_t)Bit_RESET)
         {  
-            TIM_OC1PolarityConfig(TIM8,TIM_ICPolarity_Falling);//设置为下降沿捕获			
+            TIM_OC1PolarityConfig(TIM8,TIM_ICPolarity_Falling);     //设置为下降沿捕获			
 
             Ctrl.ch.test[0].time[Ctrl.ch.test[0].p_write].low_up_time    =  time;     
             Ctrl.ch.test[0].time[Ctrl.ch.test[0].p_write].low_up_cnt     =  cnt;    
             
             Ctrl.ch.test[0].pluse_status = CH_RAISE_10_STATUS;       //上升沿，10%
 
-        }else if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_6) == RESET)                                              //低位（10%）的下降触发，正常波形的100%~90
+        }
+        //else if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_6) == RESET)                                              //低位（10%）的下降触发，正常波形的100%~90
+        else if((GPIOC->IDR & GPIO_Pin_6) == (uint32_t)Bit_RESET)
         {           
             TIM_OC1PolarityConfig(TIM8,TIM_ICPolarity_Rising);  //设置为上升沿捕获
 
@@ -86,16 +93,17 @@ void TIM8_CC_IRQHandler(void)
             //Ctrl.ch.test[0].pluse_status = CH_FALL_10_STATUS;       //下降沿，10%
         }
         
-        TIM_ClearITPendingBit(TIM8,TIM_IT_CC1);//清除中断标志
-	}    
-  
-	
+        //TIM_ClearITPendingBit(TIM8,TIM_IT_CC1);//清除中断标志
+        TIM8->SR = (uint16_t)~TIM_IT_CC1;
 
+	}    
+	
 	if(TIM8->SR&0x10)//CH4捕获中断 在CH4上升沿中断中记录的值即为两波形的上升沿时间差
 	{
         
         cnt =  TIM8->CCR4;
-        if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_9) == SET)      //高位（90%）的上升触发
+        //if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_9) == SET)      //高位（90%）的上升触发
+        if((GPIOC->IDR & GPIO_Pin_9) != (uint32_t)Bit_RESET)
         {     
             TIM_OC4PolarityConfig(TIM8,TIM_ICPolarity_Falling);//设置为下降沿捕获			
 
@@ -104,7 +112,8 @@ void TIM8_CC_IRQHandler(void)
             
             //Ctrl.ch.test[1].pluse_status = CH_RAISE_90_STATUS;       //上升沿，90%
         }
-        else  if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_9) == RESET)                                                  //高位（90%）下降沿触发
+        //else  if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_9) == RESET)                                                  //高位（90%）下降沿触发
+        else if(( GPIOC->IDR & GPIO_Pin_9) == (uint32_t)Bit_RESET)
         {           
             TIM_OC4PolarityConfig(TIM8,TIM_ICPolarity_Rising);//设置为上升沿捕获		
 
@@ -116,14 +125,15 @@ void TIM8_CC_IRQHandler(void)
             Ctrl.ch.test[1].pluse_status = CH_FALL_90_STATUS;       //下降沿，90%
         }
         
-        TIM_ClearITPendingBit(TIM8,TIM_IT_CC4);//清除中断标志
-
+        //TIM_ClearITPendingBit(TIM8,TIM_IT_CC4);//清除中断标志
+        TIM8->SR = (uint16_t)~TIM_IT_CC4;
 	}
     
 	if(TIM8->SR&0x08)//CH3捕获中断  
 	{
         cnt = TIM8->CCR3;
-        if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_8) == SET)      //低位（10%）的上升触发
+        //if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_8) == SET)      //低位（10%）的上升触发
+        if(( GPIOC->IDR & GPIO_Pin_8) != (uint32_t)Bit_RESET)
         {  
             TIM_OC3PolarityConfig(TIM8,TIM_ICPolarity_Falling); //设置为下降沿捕获			
 
@@ -132,7 +142,8 @@ void TIM8_CC_IRQHandler(void)
             
             Ctrl.ch.test[1].pluse_status = CH_RAISE_10_STATUS;       //上升沿，10%
         }
-        else  if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_8) == RESET)                                                  //低位（10%）的下降触发
+        //else  if(GPIO_ReadInputDataBit(GPIOC,GPIO_Pin_8) == RESET)                                                  //低位（10%）的下降触发
+        else if(( GPIOC->IDR & GPIO_Pin_8) == (uint32_t)Bit_RESET)
         {     
             TIM_OC3PolarityConfig(TIM8,TIM_ICPolarity_Rising);  //设置为上升沿捕获		
 
@@ -140,13 +151,15 @@ void TIM8_CC_IRQHandler(void)
             Ctrl.ch.test[1].time[Ctrl.ch.test[1].p_write].low_down_cnt     =  cnt;  
             
             
-            Ctrl.ch.test[1].p_write             =        Ctrl.ch.test[1].pulse_cnt 
+            Ctrl.ch.test[1].p_write             =     Ctrl.ch.test[1].pulse_cnt 
                                                     % CH_TIMEPARA_BUF_SIZE;
             
             //Ctrl.ch.test[1].pluse_status = CH_FALL_10_STATUS;        //下降沿，10%
         }
             
-        TIM_ClearITPendingBit(TIM8,TIM_IT_CC3);                 //清除中断标志
+        //TIM_ClearITPendingBit(TIM8,TIM_IT_CC3);                 //清除中断标志
+        TIM8->SR = (uint16_t)~TIM_IT_CC3;
+
 	}
 }
 
@@ -155,14 +168,20 @@ void TIM8_CC_IRQHandler(void)
 * Description  : 全局时间累积。真实时间 time = strSys.time * 65536 + TIM_GetCounter  
                               再乘以单周期时间。65536/72000000
 * Author       : 2018/3/13 星期二, by redmorningcn
+                 2018/11/12 将中断函数处理直接写成寄存器处理，提高响应速度
 *******************************************************************************/
 void TIM8_OVER_IRQHandler(void)
 {
-	if(TIM_GetITStatus(TIM8,TIM_IT_Update)!=RESET)  //计数器溢出中断
-	{
-		TIM_ClearITPendingBit(TIM8,TIM_IT_Update);  //清除中断标志
-        Ctrl.sys.time++;                           //系统是时间累加
-	}
+//	if(TIM_GetITStatus(TIM8,TIM_IT_Update)!=RESET)  //计数器溢出中断
+//	{
+//		TIM_ClearITPendingBit(TIM8,TIM_IT_Update);  //清除中断标志
+//        Ctrl.sys.time++;                           //系统是时间累加
+//	}
+    
+    if(TIM8->SR & TIM_IT_Update != (uint16_t)RESET){       //计数器溢出中断
+        TIM8->SR = (uint16_t)~TIM_IT_Update;        //清除中断标志
+        Ctrl.sys.time++;                            //系统是时间累加
+    }
 }
 
 /*******************************************************************************
