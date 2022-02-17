@@ -9,7 +9,7 @@ TriggerName=main
 LimitSize=0
 ByteLimit=50
 [DebugChecksum]
-Checksum=-1104636694
+Checksum=40559214
 [CodeCoverage]
 Enabled=_ 0
 [Exceptions]
@@ -52,8 +52,11 @@ Stop=1
 [Simulator]
 Freq=10000000
 MultiCoreRunAll=1
+[Trace1]
+Enabled=0
+ShowSource=1
 [struct_types]
-Fmt0=strsignalchannelpara-period	3	0
+Fmt0=strSysPara-time	3	0
 [array_types]
 Fmt0=CPU_INT08U[256]	4	0
 Fmt1=int32[10]	3	0
@@ -62,9 +65,6 @@ Fmt3=uint32[10]	3	0
 Fmt4=uint8[1024]	4	0
 [watch_formats]
 Fmt0={W}1:addr	4	0
-[Trace1]
-Enabled=0
-ShowSource=1
 [Trace2]
 Enabled=0
 ShowSource=0
@@ -116,7 +116,8 @@ SumSortOrder=0
 [Disassemble mode]
 mode=0
 [Breakpoints2]
-Count=0
+Bp0=_ 0 "EMUL_CODE" "{$PROJ_DIR$\..\source\evalboard\IAR\cstartup.c}.284.9" 0 0 1 "" 0 "" 0
+Count=1
 [Log file]
 LoggingEnabled=_ 0
 LogFile=_ ""
@@ -125,11 +126,13 @@ Category=_ 0
 LoggingEnabled=_ 0
 LogFile=_ ""
 [Aliases]
-Count=0
+A0=_ "F:\iar\single\single\source\bsp\driver\bsp_adc.c" ""
+A1=_ "F:\iar\single\single\source\bsp\driver\bsp_flash.c" ""
+Count=2
 SuppressDialog=0
 [DriverProfiling]
 Enabled=0
-Mode=1
+Mode=3
 Graph=0
 Symbiont=0
 Exclusions=

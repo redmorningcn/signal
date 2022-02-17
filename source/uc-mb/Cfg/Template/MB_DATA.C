@@ -504,19 +504,20 @@ void  MB_HoldingRegWr (CPU_INT16U   reg,
         /***********************************************
         * 描述： 写入测量模块校准参数（如果地址范围在校验区，写校验标志置位）
         */   
-        u32 addr = ((u32)&Ctrl.calitab - (u32)&Ctrl);
-        if(reg > addr/2 && reg < (addr + sizeof(Ctrl.calitab))/2)
-        {
-            Ctrl.sys.paraflg.califlg = 1;      //存校准参数
-        }
+//        u32 addr = ((u32)&Ctrl.calitab - (u32)&Ctrl);
+//        if(reg > addr/2 && reg < (addr + sizeof(Ctrl.calitab))/2)
+//        {
+//            Ctrl.sys.paraflg.califlg = 1;      //存校准参数
+//        }
         /**************************************************************
         * Description  : 存sys参数
         * Author       : 2018/5/30 星期三, by redmorningcn
         */
-        addr = (u32)((u32)&Ctrl.sys - (u32)&Ctrl);
+        u32 addr = (u32)((u32)&Ctrl.sys - (u32)&Ctrl);
         if(reg > addr/2 && reg < (addr + sizeof(Ctrl.sys))/2)
         {
-            Ctrl.sys.paraflg.sysflg = 1;      //存sys参数
+            Ctrl.sys.paraflg.sysflg             = 1;      //
+            Ctrl.sys.paraflg.ChangeFreqflg      = 1;      //重新计算
         }
         
         //CPU_SR_ALLOC();

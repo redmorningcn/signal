@@ -135,6 +135,7 @@ static  void  BSP_LED_Init   (void);
 void BSP_RccInit( u8 type, u8 freq )
 {
     SystemInit();
+    //RCC_DeInit();
     return;
 //    
 //    u32 mul = RCC_PLLMul_12;
@@ -382,13 +383,42 @@ static  void  BSP_LED_Init (void)
     GPIO_InitTypeDef  gpio_init;
         
     RCC_APB2PeriphClockCmd(GPIO_RCC_LED1, ENABLE);
+    RCC_APB2PeriphClockCmd(GPIO_RCC_LED2, ENABLE);
+    RCC_APB2PeriphClockCmd(GPIO_RCC_LED3, ENABLE);
+    RCC_APB2PeriphClockCmd(GPIO_RCC_LED4, ENABLE);
+    RCC_APB2PeriphClockCmd(GPIO_RCC_LED5, ENABLE);
+    RCC_APB2PeriphClockCmd(GPIO_RCC_LED6, ENABLE);
+  
     
     gpio_init.GPIO_Pin   = GPIO_PIN_LED1;
     gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
     gpio_init.GPIO_Mode  = GPIO_Mode_Out_PP;
-    
     GPIO_Init(GPIO_PORT_LED1, &gpio_init);
     
+    gpio_init.GPIO_Pin   = GPIO_PIN_LED2;
+    gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+    gpio_init.GPIO_Mode  = GPIO_Mode_Out_PP;
+    GPIO_Init(GPIO_PORT_LED2, &gpio_init);
+      
+    gpio_init.GPIO_Pin   = GPIO_PIN_LED3;
+    gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+    gpio_init.GPIO_Mode  = GPIO_Mode_Out_PP;
+    GPIO_Init(GPIO_PORT_LED3, &gpio_init);   
+    
+    gpio_init.GPIO_Pin   = GPIO_PIN_LED4;
+    gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+    gpio_init.GPIO_Mode  = GPIO_Mode_Out_PP;
+    GPIO_Init(GPIO_PORT_LED4, &gpio_init);   
+    
+    gpio_init.GPIO_Pin   = GPIO_PIN_LED5;
+    gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+    gpio_init.GPIO_Mode  = GPIO_Mode_Out_PP;
+    GPIO_Init(GPIO_PORT_LED5, &gpio_init);  
+    
+    gpio_init.GPIO_Pin   = GPIO_PIN_LED6;
+    gpio_init.GPIO_Speed = GPIO_Speed_50MHz;
+    gpio_init.GPIO_Mode  = GPIO_Mode_Out_PP;
+    GPIO_Init(GPIO_PORT_LED6, &gpio_init);       
     
     BSP_LED_Off(BSP_LED_ALL);
 }
@@ -420,7 +450,7 @@ void  BSP_LED_On (CPU_INT08U led)
     switch (led) {
         case 0:
              GPIO_SetBits(GPIO_PORT_LED1, GPIO_PIN_LED1);
-             GPIO_SetBits(GPIO_PORT_LED2, GPIO_PIN_LED1);
+             GPIO_SetBits(GPIO_PORT_LED2, GPIO_PIN_LED2);
              break;
         case 1:
              GPIO_SetBits(GPIO_PORT_LED1, GPIO_PIN_LED1);
@@ -428,7 +458,18 @@ void  BSP_LED_On (CPU_INT08U led)
         case 2:
              GPIO_SetBits(GPIO_PORT_LED2, GPIO_PIN_LED2);
              break;
-
+        case 3:
+             GPIO_SetBits(GPIO_PORT_LED3, GPIO_PIN_LED3);
+             break;
+        case 4:
+             GPIO_SetBits(GPIO_PORT_LED4, GPIO_PIN_LED4);
+             break;
+        case 5:
+             GPIO_SetBits(GPIO_PORT_LED5, GPIO_PIN_LED5);
+             break;     
+        case 6:
+             GPIO_SetBits(GPIO_PORT_LED6, GPIO_PIN_LED6);
+             break;               
         default:
              break;
     }
@@ -469,7 +510,18 @@ void  BSP_LED_Off (CPU_INT08U led)
         case 2:
              GPIO_ResetBits(GPIO_PORT_LED2, GPIO_PIN_LED2);
              break;
-
+        case 3:
+             GPIO_ResetBits(GPIO_PORT_LED3, GPIO_PIN_LED3);
+             break;
+        case 4:
+             GPIO_ResetBits(GPIO_PORT_LED4, GPIO_PIN_LED4);
+             break;
+        case 5:
+             GPIO_ResetBits(GPIO_PORT_LED5, GPIO_PIN_LED5);
+             break;
+        case 6:
+             GPIO_ResetBits(GPIO_PORT_LED6, GPIO_PIN_LED6);
+             break;             
         default:
              break;
     }

@@ -761,7 +761,8 @@ void  MB_RTU_TmrInit (void)
     TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure; 
     
     clk_freq            = BSP_CPU_ClkFreq();
-    MB_Tmr_ReloadCnts   = clk_freq / 36000/ MB_RTU_Freq - 1;
+    //MB_Tmr_ReloadCnts   = clk_freq / 36000/ MB_RTU_Freq - 1;
+    MB_Tmr_ReloadCnts = 1;
     
     //预分频系数（TIM_Prescaler）  = 36000-1，这样计数器时钟为72MHz/36000 = 2kHz 
     //中断计数器 （TIM_Period）    = MB_Tmr_ReloadCnts

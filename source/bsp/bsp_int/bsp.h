@@ -169,13 +169,41 @@ extern u8   BSP_CPU_ClkFreq_MHz;      // 系统时钟频率（M）
 /***********************************************
 * 描述： LED端口定义（自己添加）
 */
+//#define  GPIO_RCC_LED1                          RCC_APB2Periph_GPIOA
+//#define  GPIO_PORT_LED1                         GPIOA
+//#define  GPIO_PIN_LED1                          DEF_BIT_08
+
+
 #define  GPIO_RCC_LED1                          RCC_APB2Periph_GPIOB
 #define  GPIO_PORT_LED1                         GPIOB
-#define  GPIO_PIN_LED1                          DEF_BIT_07
+#define  GPIO_PIN_LED1                          DEF_BIT_06
 
-#define  GPIO_RCC_LED2                          RCC_APB2Periph_GPIOD
-#define  GPIO_PORT_LED2                         GPIOD
-#define  GPIO_PIN_LED2                          DEF_BIT_01
+#define  GPIO_RCC_LED2                          RCC_APB2Periph_GPIOB
+#define  GPIO_PORT_LED2                         GPIOB
+#define  GPIO_PIN_LED2                          DEF_BIT_07
+    
+#define  GPIO_RCC_LED3                          RCC_APB2Periph_GPIOA
+#define  GPIO_PORT_LED3                         GPIOA
+#define  GPIO_PIN_LED3                          DEF_BIT_01
+
+#define  GPIO_RCC_LED4                          RCC_APB2Periph_GPIOA
+#define  GPIO_PORT_LED4                         GPIOA
+#define  GPIO_PIN_LED4                          DEF_BIT_02    
+
+    
+#define  GPIO_RCC_LED5                          RCC_APB2Periph_GPIOB
+#define  GPIO_PORT_LED5                         GPIOB
+#define  GPIO_PIN_LED5                          DEF_BIT_10
+
+#define  GPIO_RCC_LED6                          RCC_APB2Periph_GPIOB
+#define  GPIO_PORT_LED6                         GPIOB
+#define  GPIO_PIN_LED6                          DEF_BIT_11
+    
+
+
+//#define  GPIO_RCC_LED2                          RCC_APB2Periph_GPIOC
+//#define  GPIO_PORT_LED2                         GPIOC
+//#define  GPIO_PIN_LED2                          DEF_BIT_07
 
 #define  BSP_GPIO_LEDS                         (GPIO_PIN_LED1 | \
                                                 GPIO_PIN_LED2)

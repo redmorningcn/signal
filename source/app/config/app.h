@@ -44,30 +44,34 @@ typedef struct
     
     union{
         struct{
-            u16  sysflg      :1; // 存系统参数 
-            u16  califlg     :1; // 存校准参数
-            u16  rev         :6; // 预留
+            u16  sysflg                 :1; // 存系统参数 
+            u16  califlg                :1; // 存校准参数
+            u16  ChangeFreqflg          :1; // 改变频率值
+            u16  rev                    :6; // 预留
         };
         u16  flags;
-    }paraflg;
+    }paraflg;                            //8
       
     /**************************************************************
-    * Description  : 丢脉冲计算参数
-    * Author       : 2018/7/19 星期四, by redmorningcn
+    * Description  : 波形产生参数
+    * Author       : 2022/01/19 星期四, by redmorningcn
     */
     struct{
-        u16     periodcali;     //丢脉冲，周期系数*10（10-30）
-        u16     loseerrtimes;       //丢脉冲次数。默认4次连续。
+        u32     CHtime;                 //通道时间  10
+        u16     LocoDim;                //机车轮径  14
+        u16     PluseNum;               //脉冲常数  16
+        u16     setSpeed;               //设置速度值 18
+        u16     SetMode;                //设置运行模式（可根据模式，选择低速，均加速，定值等模式运行）//20
+        u16     setfrq;                 //设置频率值0-50000hz   22
+        u16     setphase;               //超前还是滞后，相位关系 1-2，相位范围0-360，相位0-180，1超前2；相位180-360， //24
+        u16     setCH[6];               //各通道参数，设置占空比0-100%    //26
+        u16     vccCH[6];               //各通道电压                     //38 
+        u16     speedCH[6];             //各通道速度                     //50        
     };     
     
-    struct{
-        u16     ref_limitvol_min;    //参考电压（最小值） 默认值：750(750)       可设置范围 (600-800)
-        u16     ref_limitvol_max;    //参考电压（最大值） 默认值：1500（2.0V）   可设置范围 (1200-1800)
-    };
-    
-    uint8   buf[54];        // 预留         8
-    uint32  cpu_freq;       // cpu频率      72
-    uint32  time;           // 系统全局时间(系统时钟(1/72Mhz) *65536)=约1ms   76
+    uint8   buf[30];                    // 预留          8
+    uint32  cpu_freq;                   // cpu频率      72
+    uint32  time;                       // 系统全局时间(系统时钟(1/72Mhz) *65536)=约1ms   76
 }strSysPara;    
     
 
@@ -75,8 +79,8 @@ __packed
 typedef union _Unnctrl_ {
     struct{
         strSysPara          sys;        //公共参数
-        strCoupleChannel    ch;         //产品特有参数    
-        strCaliTable        calitab;    //修正系数
+        //strCoupleChannel    ch;         //产品特有参数    
+        //strCaliTable        calitab;    //修正系数
         MODBUS_CH   	    *pch;       //modbus控制块
 
     };
